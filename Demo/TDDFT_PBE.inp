@@ -1,0 +1,191 @@
+&GLOBAL
+  PROJECT fcenter_tddft_pbe
+  PRINT_LEVEL HIGH
+  RUN_TYPE ENERGY
+&END GLOBAL
+
+
+&FORCE_EVAL
+  METHOD QS
+&PROPERTIES
+  &TDDFPT                          ! input section for TDDFPT
+   KERNEL FULL                       ! specification of the underlying kernel matrix K
+                                     ! FULL kernel is for GGA and hybrid functional computations
+                                     ! sTDA kernel is referring to a semi-empirical sTDA computation
+   NSTATES 10                      ! specifies the number of excited states to be computed
+   MAX_ITER   100                  ! number of iterations for the Davidson algorithm
+   CONVERGENCE [eV] 1.0e-6         ! convergence threshold in eV
+   ADMM_KERNEL_CORRECTION_SYMMETRIC T                 ! Keyword to choose between singlet and triplet excitations
+ !  &XC                            ! If choosing kernel FULL, the underlying functional can be
+ !   &XC_FUNCTIONAL PBE0             ! specified by adding an XC section
+ !   &END XC_FUNCTIONAL              ! The functional can be chosen independently from the chosen
+ !  &END XC                        ! GS functional except when choosing ADMM
+ !  &MGRID                         ! It is also possible to choose a separate grid for the real-space
+ !    CUTOFF 800                   ! integration of the response density in the TDDFT part,
+ !    REL_CUTOFF 80                ! however, in general a consistent setup for GS and ES is recommended
+ !  &END MGRID
+  &END TDDFPT
+&END PROPERTIES
+  &DFT
+    BASIS_SET_FILE_NAME BASIS_MOLOPT
+    BASIS_SET_FILE_NAME BASIS_ADMM
+    POTENTIAL_FILE_NAME GTH_POTENTIALS
+    WFN_RESTART_FILE_NAME fcenter-RESTART.wfn
+    CHARGE 0
+    MULTIPLICITY 2
+    UKS
+    &MGRID
+      COMMENSURATE
+      CUTOFF 400
+      NGRIDS 5
+      REL_CUTOFF 50.
+    &END MGRID
+ &SCF
+      MAX_SCF 300
+      SCF_GUESS RESTART
+   &OT
+            ! an accurate preconditioner suitable also for larger systems
+            PRECONDITIONER FULL_ALL
+            ! the most robust choice (DIIS might sometimes be faster, but not as stable).
+            MINIMIZER CG
+   &END OT
+    &OUTER_SCF ! repeat the inner SCF cycle 10 times
+      MAX_SCF 100
+      EPS_SCF 1.0E-6 ! must match the above
+    &END
+    &END SCF
+    &AUXILIARY_DENSITY_MATRIX_METHOD
+     METHOD BASIS_PROJECTION
+     ADMM_PURIFICATION_METHOD NONE
+     EXCH_CORRECTION_FUNC PBEX
+    &END AUXILIARY_DENSITY_MATRIX_METHOD
+
+&XC
+      ! use a PBE0 functional
+      &XC_FUNCTIONAL
+       &PBE
+         ! 75% GGA exchange
+         SCALE_X 0.75
+         ! 100% GGA correlation
+         SCALE_C 1.0
+       &END PBE
+      &END XC_FUNCTIONAL
+    !  &HF
+    !    ! 25 % HFX exchange
+    !    FRACTION 0.25
+    !    ! Important to improve scaling from O(N^4) to O(N)
+    !    &SCREENING
+          ! important parameter to get stable HFX calcs (contributions to hfx smaller than EPS_SCHWARZ are not considered)
+    !      EPS_SCHWARZ 1.0E-6
+          ! needs a good (GGA) initial guess
+          ! screening on the product between maximum of density matrix elements and ERI
+     !     SCREEN_ON_INITIAL_P TRUE
+      !  &END
+   ! &MEMORY
+   !  MAX_MEMORY 2400
+   !  EPS_STORAGE_SCALING 0.1
+   ! &END MEMORY
+   !   &INTERACTION_POTENTIAL
+   !     POTENTIAL_TYPE TRUNCATED
+   !     CUTOFF_RADIUS 8.8
+   !     T_C_G_DATA ./t_c_g.dat
+   !    &END INTERACTION_POTENTIAL
+  ! &END HF
+&END XC
+
+
+   &PRINT
+!      &PDOS
+!	 FILENAME ./sulfurA
+!         # print all projected DOS available:
+!         NLUMO -1
+!        &END
+!	&DOS
+!         FILENAME ./sulfurA
+!         # print all projected DOS available:
+!        &END
+!       &E_DENSITY_CUBE HIGH
+!       &END E_DENSITY_CUBE
+!
+       &MO_CUBES                 ! Controls which MOs are written to cube-files.
+        NHOMO 10
+        NLUMO 10
+      &END MO_CUBES
+      &END PRINT
+  &END DFT
+
+  &SUBSYS
+    &CELL
+A [angstrom] 17.6557615062 0.00000 0.00000
+B [angstrom] 0.00000 17.6557615062 0.00000
+C [angstrom] 0.00000 0.00000 17.6557615062 
+
+      PERIODIC XYZ
+    &END CELL
+    &TOPOLOGY
+      COORD_FILE_NAME sulfur.xyz
+      COORD_FILE_FORMAT XYZ
+    &END TOPOLOGY
+
+    &KIND H
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      BASIS_SET AUX_FIT cFIT3
+      POTENTIAL GTH-PBE-q1
+    &END KIND
+
+    &KIND O
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      BASIS_SET AUX_FIT cFIT3
+      POTENTIAL GTH-PBE-q6
+    &END KIND
+
+    &KIND S
+      BASIS_SET TZVP-MOLOPT-GTH
+      BASIS_SET AUX_FIT cFIT3
+      POTENTIAL GTH-PBE-q6
+    &END KIND
+
+    &KIND Fe
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      BASIS_SET AUX_FIT cFIT3
+      POTENTIAL GTH-PBE-q16	
+    &END KIND
+
+    &KIND Al
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      BASIS_SET AUX_FIT cFIT3
+      POTENTIAL GTH-PBE-q3	
+    &END KIND
+
+    &KIND Si
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      BASIS_SET AUX_FIT cFIT3
+      POTENTIAL GTH-PBE-q4	
+    &END KIND 
+
+    &KIND Cl
+      BASIS_SET DZVP-MOLOPT-SR-GTH
+      BASIS_SET AUX_FIT cFIT3
+      POTENTIAL GTH-PBE-q7
+    &END KIND
+
+    &KIND Na
+      BASIS_SET DZVP-MOLOPT-PBE-GTH-q1
+      BASIS_SET AUX_FIT cFIT3
+      POTENTIAL GTH-PBE-q1	
+    &END KIND
+
+   &KIND NA2
+      BASIS_SET DZVP-MOLOPT-PBE-GTH-q1
+      BASIS_SET AUX_FIT cFIT3
+      POTENTIAL GTH-PBE-q1
+    &END KIND
+
+    
+    &KIND S
+	BASIS_SET DZVP-MOLOPT-SR-GTH
+        BASIS_SET AUX_FIT cFIT3
+        POTENTIAL GTH-PBE-q6
+    &END KIND
+  &END SUBSYS
+&END FORCE_EVAL
