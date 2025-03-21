@@ -12,4 +12,6 @@ How to use it:
             It should work either for Orca 5 and Orca 6.
 
 Once you have all the files:
-bash excited\_index.sh  
+bash excited\_index.sh 
+
+WARNING: you should have the extension in the name of the files 
