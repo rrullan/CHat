@@ -58,7 +58,7 @@ echo 'Miaou !'
 if [ -f ${transition_file} ] ; then
         echo -n "" > ${transition_file}
 fi
-index_label="A B 1 2 3 4 5 11 12 13 14 15 16 17 20 21"
+index_label="A B a b c 1 2 3 4 5 11 12 13 14 15 16 17 20 21"
 function not_in_list() {
     LIST=$1
     DELIMITER=$2
@@ -96,7 +96,7 @@ do
                 echo ""
                 echo "#########################################################################"
                 echo ""
-                exit 1
+               
 	fi
 
 	if [ $Index_Type = A ] ; then
@@ -150,7 +150,7 @@ do
                 		echo ""
                 		echo "#########################################################################"
                 		echo ""
-                		exit 1
+                	
 				fi
 
 				if [ $Index_Type = 11 ] ; then
@@ -215,7 +215,7 @@ do
                         			echo ""
                         			echo " ----------------------"
                         			echo ""
-                        			exit 1
+                        		
                 			fi
 
                 			if [ ${State_Index} -gt ${nb_state[0]} ] ; then
@@ -250,7 +250,7 @@ do
                                        					echo ""
                                         				echo "#########################################################################"
                                         				echo ""
-                                        				exit 1
+                                        				
                                 				fi
                                 			fi
 
@@ -265,7 +265,7 @@ do
                                         				echo ""
                                         				echo "#########################################################################"
                                         				echo ""
-                                         				exit 1
+                                         			
                                 				fi
                                 			fi
                                 			((i++))
@@ -359,8 +359,7 @@ do
                 		echo "                 ERROR: Please choose a valid option "
                 		echo ""
                 		echo "#########################################################################"
-                		echo ""
-                		exit 1
+                		echo ""	
         		fi
 
         		if [ $Index_Type = 11 ] ; then
@@ -430,105 +429,193 @@ do
                         fi
        			
 		        if [ $Index_Type = 5 ]; then
+				echo "    =============================================================="
+                        	echo "         Generation options:"
+                        	echo ""
+                        	echo "               - From transitions: a"
+                        	echo "               - From a list of orbitals: b"
+                        	echo "               - From an interval of orbitals: c"   
+ 				echo ""
+				echo "               -Exit: 21"
+                        	echo "    --------------------------------------------------------------"
+                        	read -p "    Enter a type: " Index_Type
+                        	echo "    =============================================================="
+                        	if not_in_list "$index_label"  " "  $Index_Type ; then
+                                	echo ""
+                                	echo "#########################################################################"
+                                	echo ""
+                                	echo "                 ERROR: Please choose a valid option "
+                                	echo ""
+                                	echo "#########################################################################"
+                                	echo ""
+                                
+                        	fi
+				
+				if [ $Index_Type = a ]; then
+					
+                       	        	read -p "    Excited State Number: " State_Index
+                                	echo "    =============================================================="
+                                	echo ""	
+                                	sed -i 's/nroots/nroots/Ig' ${input_file}
+					nb_state=(`python -c"import excited_index; excited_index.find_nb_state_calc('${input_file}')"`)
+                                	if [ ${nb_state[1]} = True ] ; then
+                                        	max_index=$((${nb_state[0]} + ${nb_state[0]}))
+                                	else
+                                        	max_index=${nb_state[0]}
+                                	fi
+                                	if [ ${State_Index} -gt $max_index ] ; then
+                                        	echo "----------- ERROR -------------"
+                                        	echo ""
+                                        	echo "    There is no State ${State_Index} in the file ${input_file}"
+                                        	echo ""
+                                        	echo "--------------------------------"
+                                        	echo ""
+                                        
+                                	fi
 
-                                read -p "    Excited State Number: " State_Index
-                                echo "    =============================================================="
-                                echo ""	
-                                sed -i 's/nroots/nroots/Ig' ${input_file}
-				nb_state=(`python -c"import excited_index; excited_index.find_nb_state_calc('${input_file}')"`)
-                                if [ ${nb_state[1]} = True ] ; then
-                                        max_index=$((${nb_state[0]} + ${nb_state[0]}))
-                                else
-                                        max_index=${nb_state[0]}
-                                fi
-                                if [ ${State_Index} -gt $max_index ] ; then
-                                        echo "----------- ERROR -------------"
-                                        echo ""
-                                        echo "    There is no State ${State_Index} in the file ${input_file}"
-                                        echo ""
-                                        echo "--------------------------------"
-                                        echo ""
-                                        exit 1
-                                fi
-
-                                if [ ${State_Index} -gt ${nb_state[0]} ] ; then
-                                        State_Index_temp=$((${State_Index} - ${nb_state[0]}))
-                                        i=1
-                                        temp=`grep -A $i "STATE[[:space:]]*${State_Index_temp}:  E=" ${input_file} |tail -n 2 |tail -n 1`
-                                        echo $temp
-                                        while [[ "$temp" != "" ]];
-                                        do
-                                                echo $temp >> ${transition_file}
-                                                ((i++))
-                                                temp=`grep -A $i "STATE[[:space:]]*${State_Index_temp}:  E=" ${input_file} |tail -n 2 |tail -n 1`
-                                        done
-                                else
-                                        i=1
-                                        temp=`grep -A $i "STATE[[:space:]]*${State_Index}:  E=" ${input_file} |tail -n 2 |tail -n 1 `
-                                        echo $temp
-                                        while [[ "$temp" != "" ]];
-                                        do
-                                                echo $temp >> ${transition_file}
-                                                ((i++))
-                                                temp=`grep -A $i "STATE[[:space:]]*${State_Index}:  E=" ${input_file} |tail -n 2    |tail -n 1`
-                                        done
-                                fi
-				MO_virt=($(python -c"import excited_index; excited_index.molecular_decomposition('virtual', True, 'transition.txt')" | tr -d '[],'))
-                                MO_occ=($(python -c"import excited_index; excited_index.molecular_decomposition('occupied', True, 'transition.txt')" | tr -d '[],'))
+                                	if [ ${State_Index} -gt ${nb_state[0]} ] ; then
+                                        	State_Index_temp=$((${State_Index} - ${nb_state[0]}))
+                                        	i=1
+                                        	temp=`grep -A $i "STATE[[:space:]]*${State_Index_temp}:  E=" ${input_file} |tail -n 2 |tail -n 1`
+                                        	echo $temp
+                                        	while [[ "$temp" != "" ]];
+                                        	do
+                                                	echo $temp >> ${transition_file}
+                                                	((i++))
+                                                	temp=`grep -A $i "STATE[[:space:]]*${State_Index_temp}:  E=" ${input_file} |tail -n 2 |tail -n 1`
+                                        	done
+                                	else
+                                        	i=1
+                                        	temp=`grep -A $i "STATE[[:space:]]*${State_Index}:  E=" ${input_file} |tail -n 2 |tail -n 1 `
+                                        	echo $temp
+                                        	while [[ "$temp" != "" ]];
+                                        	do
+                                                	echo $temp >> ${transition_file}
+                                                	((i++))
+                                                	temp=`grep -A $i "STATE[[:space:]]*${State_Index}:  E=" ${input_file} |tail -n 2    |tail -n 1`
+                                        	done
+                                	fi
+					MO_virt=($(python -c"import excited_index; excited_index.molecular_decomposition('virtual', True, 'transition.txt')" | tr -d '[],'))
+                                	MO_occ=($(python -c"import excited_index; excited_index.molecular_decomposition('occupied', True, 'transition.txt')" | tr -d '[],'))
                               
-                                version=$(grep 'Program Version' Fcenter_TDA_PBE_TZVP.out | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
-                                if [ ${version} = 5 ]; then
-                                        for occ in ${MO_occ[@]}; do
-                                                /home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF 
-                                                4
-                                                ${grid_size}
-                                                2
-                                                $occ
-                                                5
-                                                7
-                                                10
-                                                11
+                                	version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+                                	if [ ${version} = 5 ]; then
+                                        	for occ in ${MO_occ[@]}; do
+                                                	/home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF 
+                                                	4
+                                                	${grid_size}
+                                                	2
+                                                	$occ
+                                                	5
+                                                	7
+                                                	10
+                                                	11
 EOF
-                                        done
+                                        	done
 
-                                        for virt in ${MO_virt[@]}; do
-                                                /home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
-                                                4
-                                                ${grid_size}
-                                                2
-                                                $virt
-                                                5
-                                                7
-                                                10
-                                                11
+                                        	for virt in ${MO_virt[@]}; do
+                                                	/home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
+                                               		4
+                                                	${grid_size}
+                                                	2
+                                                	$virt
+                                                	5
+                                                	7
+                                                	10
+                                                	11
 EOF
-                                        done
+                                        	done
 
-                                elif [ ${version} = 6 ]; then
-                                        for occ in ${MO_occ[@]}; do
-                                                /Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF 
-                                                4
-                                                ${grid_size}
-                                                2
-                                                $occ
-                                                5
-                                                7
-                                                11
-                                                12
+                                	elif [ ${version} = 6 ]; then
+                                        	for occ in ${MO_occ[@]}; do
+                                                	/Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF 
+                                                	4
+                                                	${grid_size}
+                                                	2
+                                                	$occ
+                                                	5
+                                                	7
+                                                	11
+                                                	12
 EOF
-                                        done
+                                        	done
 
-                                        for virt in ${MO_virt[@]}; do
-                                                /Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF
-                                                4
-                                                ${grid_size}
-                                                2
-                                                $virt
-                                                5
-                                                7
-                                                11
-                                                12
+                                        	for virt in ${MO_virt[@]}; do
+                                                	/Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF
+                                                	4
+                                                	${grid_size}
+                                                	2
+                                                	$virt
+                                                	5
+                                                	7
+                                                	11
+                                                	12
 EOF
+                                        	done
+                        	        fi
+				fi
+
+				if [ $Index_Type = b ]; then
+					read -p "    List of orbitals: " List_orb
+                                        echo "    =============================================================="
+					for orb in ${List_orb}; do
+						version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+						if [ ${version} = 5 ]; then
+							/home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
+                                                	4
+                                                	${grid_size}
+                                                	2
+                                                	$orb
+                                                	5
+                                                	7
+                                                	10
+                                                	11
+EOF
+						elif [ ${version} = 6 ]; then
+							/Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF
+                                                	4
+                                                	${grid_size}
+                                                	2
+                                                	$occ
+                                                	5
+                                                	7
+                                                	11
+                                                	12
+EOF
+						fi
+					done
+
+				fi
+
+				if [ $Index_Type = c ]; then
+                                        read -p " Starting orbital: " begin_orb
+					read -p " Ending orbital: " ending_orb
+                                        echo "    =============================================================="
+					for (( orb=${begin_orb}; orb<(${ending_orb} + 1); orb ++ )); do
+                                                version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+                                                if [ ${version} = 5 ]; then
+                                                        /home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
+                                                        4
+                                                        ${grid_size}
+                                                        2
+                                                        $orb
+                                                        5
+                                                        7
+                                                        10
+                                                        11
+EOF
+                                                elif [ ${version} = 6 ]; then
+                                                        /Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF
+                                                        4
+                                                        ${grid_size}
+                                                        2
+                                                        $occ
+                                                        5
+                                                        7
+                                                        11
+                                                        12
+EOF
+                                                fi
                                         done
 
                                 fi
@@ -553,7 +640,7 @@ EOF
                         		echo ""
                         		echo "--------------------------------"
                        			echo ""
-                        		exit 1
+                        	
                 		fi
 
                 		if [ ${State_Index} -gt ${nb_state[0]} ] ; then
@@ -582,7 +669,7 @@ EOF
                 		MO_virt=($(python -c"import excited_index; excited_index.molecular_decomposition('virtual', True, 'transition.txt')" | tr -d '[],'))
                 		MO_occ=($(python -c"import excited_index; excited_index.molecular_decomposition('occupied', True, 'transition.txt')" | tr -d '[],'))
 
-				version=$(grep 'Program Version' Fcenter_TDA_PBE_TZVP.out | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+				version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
 				if [ ${version} = 5 ]; then
                 			for occ in ${MO_occ[@]}; do
                         			/home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF 
@@ -679,7 +766,7 @@ EOF
                         		echo ""
                         		echo "        ----------------------"
                         		echo ""
-                        		exit 1
+                        	
                 		fi
 				sed -i 's/nroots/nroots/Ig' ${input_file}
                 		nb_state=(`python -c"import excited_index; excited_index.find_nb_state_calc('${input_file}')"`)
@@ -696,7 +783,7 @@ EOF
                         		echo "" 
                         		echo "        ----------------------"
                         		echo ""
-                        		exit 1
+                        	
                 			fi
                 		if [ ${Final_State} -gt $max_index ] ; then
                         		echo "        ------- ERROR ---------"
@@ -705,11 +792,11 @@ EOF
                         		echo ""
                         		echo "        ----------------------"
                         		echo ""
-                        		exit 1
+                        
                 		fi
 
                 		if [ $Initial_State = 0 ] ; then
-					version=$(grep 'Program Version' Fcenter_TDA_PBE_TZVP.out | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+					version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
                                 	
 					if [ ${version} = 5 ]; then
                         			/home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
@@ -750,7 +837,7 @@ EOF
 
 				else
 
-					version=$(grep 'Program Version' Fcenter_TDA_PBE_TZVP.out | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+					version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
                                         if [ ${version} = 5 ]; then
                                                 /home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
                                                 4
@@ -837,7 +924,7 @@ EOF
                         		echo ""
                         		echo " ----------------------"
                         		echo ""
-                        		exit 1
+                        	
                 		fi
                 		echo "    The Singlet State Considered is the S${Initial_State}"
                 		i=1
@@ -851,7 +938,7 @@ EOF
                 		MO_virt_s=($(python -c"import excited_index; excited_index.molecular_decomposition('virtual', True, 'transition.txt')" | tr -d '[],'))
                 		MO_occ_s=($(python -c"import excited_index; excited_index.molecular_decomposition('occupied', True, 'transition.txt')" | tr -d '[],'))
 			
-                                version=$(grep 'Program Version' Fcenter_TDA_PBE_TZVP.out | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+                                version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
                                 if [ ${version} = 5 ]; then
                                         for occ in ${MO_occ[@]}; do
                                                 /home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF 
@@ -942,7 +1029,7 @@ EOF
                 		MO_virt_t=($(python -c"import excited_index; excited_index.molecular_decomposition('virtual', True, 'transition.txt')" | tr -d '[],'))
                 		MO_occ_t=($(python -c"import excited_index; excited_index.molecular_decomposition('occupied', True, 'transition.txt')" | tr -d '[],'))
 
-                                version=$(grep 'Program Version' Fcenter_TDA_PBE_TZVP.out | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+                                version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
                                 if [ ${version} = 5 ]; then
                                         for occ in ${MO_occ[@]}; do
                                                 /home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF 
