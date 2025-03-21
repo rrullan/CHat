@@ -4,7 +4,7 @@
 """
 Created on Tue Mar 26 11:36:12 2024
 
-@author: adufou05
+@author: Antonin Dufour and Raphael Rullan 
 """
 
 #-----------------------------------------------------------------------------#
