@@ -11,5 +11,14 @@ How to use it:
  -For Orca: you should have the file.out, file.gbw and eventually the file.cis in the directory.
             It should work either for Orca 5 and Orca 6.
 
+WARNING: for Orca, you should give the path to orca\_plot for your architecture in excited\_index.sh
+
 Once you have all the files:
-bash excited\_index.sh  
+bash excited\_index.sh 
+
+WARNING: you should have the extension in the name of the files 
+
+
+This code uses the Cube-Toolz package to manipulate cube files (see the github repository: https://github.com/funkymunkycool/Cube-Toolz).
+This code is under the license: European Union Public License 1.2.
+
