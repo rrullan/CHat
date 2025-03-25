@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-Created on Tue Mar 26 11:36:12 2024
+The functions used for cube manipulation are from the Cube-Toolz package: https://github.com/funkymunkycool/Cube-Toolz.
+Some have been modified by Antonin Dufour and Raphael Rullan. The Orca index have been implemented mostly by Antonin Dufour
+and adapted by Raphael Rullan for the CP2K software.
 
-@author: Antonin Dufour and Raphael Rullan 
+This code is under the license: European Union Public License 1.2.
 """
 
 #-----------------------------------------------------------------------------#
