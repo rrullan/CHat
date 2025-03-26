@@ -58,7 +58,7 @@ echo 'Miaou !'
 if [ -f ${transition_file} ] ; then
         echo -n "" > ${transition_file}
 fi
-index_label="A B a b c 1 2 3 4 5 11 12 13 14 15 16 17 20 21"
+index_label="A B a b c 1 2 3 4 5 11 12 13 14 15 16 17 18 20 21"
 function not_in_list() {
     LIST=$1
     DELIMITER=$2
@@ -92,7 +92,7 @@ do
                 echo ""
                 echo "#########################################################################"
                 echo ""
-                echo "                 ERROR : Please choose a valid option "
+                echo "                 ERROR: Please choose a valid option "
                 echo ""
                 echo "#########################################################################"
                 echo ""
@@ -157,10 +157,10 @@ do
                 			while [[ ! $whiling =~ ^(n|y)$ ]]
                 			do
                         			echo "    The default name of the OUT-file would be : ${input_file}"
-                        			read -p "    Is this the one you want (y/n) : " whiling
+                        			read -p "    Is this the one you want (y/n): " whiling
                 			done
                 			if [ $whiling = n ] ; then
-                        			read -p "    Enter the filename : " input_file
+                        			read -p "    Enter the filename: " input_file
                 			fi
         			fi
 
@@ -169,10 +169,10 @@ do
                 			while [[ ! $whiling =~ ^(n|y)$ ]]
                 			do
                         			echo "    The default name of the INP-file would be : ${aux_file}"
-                        			read -p "    Is this the one you want (y/n) : " whiling
+                        			read -p "    Is this the one you want (y/n): " whiling
                 			done
                 			if [ $whiling = n ] ; then
-                        			read -p "    Enter the filename : " aux_file
+                        			read -p "    Enter the filename: " aux_file
                 			fi
         			fi
 
@@ -180,22 +180,22 @@ do
                                         whiling=''
                                         while [[ ! $whiling =~ ^(n|y)$ ]]
                                         do
-                                                echo "    The default name of the ORB-file would be : ${aux_file}"
-                                                read -p "    Is this the one you want (y/n) : " whiling
+                                                echo "    The default name of the ORB-file would be: ${aux_file}"
+                                                read -p "    Is this the one you want (y/n): " whiling
                                         done
                                         if [ $whiling = n ] ; then
-                                                read -p "    Enter the filename : " orb_file
+                                                read -p "    Enter the filename: " orb_file
                                         fi
                                 fi 
 
         			if [ $Index_Type = 14 ] ; then
                 			echo "    The cutoff for the transition decomposition is : ${cutoff}"
-                			read -p "    Please enter the new cutoff : " cutoff
+                			read -p "    Please enter the new cutoff: " cutoff
 				fi
 
 				if [ $Index_Type = 15 ] ; then
                                 	echo "    The name for the Tozer file is by default : Tozer-state"
-                                        read -p "    Please enter the new suffixe : " name
+                                        read -p "    Please enter the new suffixe: " name
                                 fi
 
 					
@@ -346,6 +346,7 @@ do
         		echo "               - Auto-Save of CUBE-file: 15"
         		echo "               - Change the cutoff: 16"
 			echo "               - Name of the Tozer file: 17"
+			echo "               - Name of the Orca path: 18"
         		echo ""
         		echo "               - Change the code: 20"
 			echo "               - Exit: 21"
@@ -365,11 +366,11 @@ do
         		if [ $Index_Type = 11 ] ; then
                 		while [[ ! $whiling =~ ^(n|y)$ ]]
                 		do
-                        		echo "    The default name of the GBW-file would be : ${gbw_file}"
-                        		read -p "    Is this the one you want (y/n) : " whiling
+                        		echo "    The default name of the GBW-file would be: ${gbw_file}"
+                        		read -p "    Is this the one you want (y/n): " whiling
                 		done
                 		if [ $whiling = n ] ; then
-                        		read -p "    Enter the filename : " gbw_file
+                        		read -p "    Enter the filename: " gbw_file
                 		fi
         		fi
 
@@ -377,11 +378,11 @@ do
                 		whiling=''
                 		while [[ ! $whiling =~ ^(n|y)$ ]]
                 		do
-                        		echo "    The default name of the CIS-file would be : ${cis_file}"
-                        		read -p "    Is this the one you want (y/n) : " whiling
+                        		echo "    The default name of the CIS-file would be: ${cis_file}"
+                        		read -p "    Is this the one you want (y/n): " whiling
                 		done
                 		if [ $whiling = n ] ; then
-                        		read -p "    Enter the filename : " cis_file
+                        		read -p "    Enter the filename: " cis_file
                 		fi
         		fi
 
@@ -389,11 +390,11 @@ do
                                 whiling=''
                                 while [[ ! $whiling =~ ^(n|y)$ ]]
                                 do
-                                        echo "    The default name of the OUT-file would be : ${input_file}"
-                                        read -p "    Is this the one you want (y/n) : " whiling
+                                        echo "    The default name of the OUT-file would be: ${input_file}"
+                                        read -p "    Is this the one you want (y/n): " whiling
                                 done
                                 if [ $whiling = n ] ; then
-                                        read -p "    Enter the filename : " input_file
+                                        read -p "    Enter the filename: " input_file
 					filename="${input_file%.*}"
                 			gbw_file="${filename}.gbw"
                 			cis_file="${filename}.cis"
@@ -401,15 +402,15 @@ do
                         fi
 
         		if [ $Index_Type = 14 ] ; then
-               			echo "    The actual grid size is : ${grid_size}x${grid_size}x${grid_size}"
-                		read -p "    The new grid size is : " grid_size
+               			echo "    The actual grid size is: ${grid_size}x${grid_size}x${grid_size}"
+                		read -p "    The new grid size is: " grid_size
         		fi
 
         		if [ $Index_Type = 15 ] ; then
                 		whiling=''
                 		while [[ ! $whiling =~ ^(n|y)$ ]]
                 		do
-                       	 		read -p "    Automatic save of the generated CUBE-file (y/n) : " whiling
+                       	 		read -p "    Automatic save of the generated CUBE-file (y/n): " whiling
                 		done
                 		if [ $whiling = n ] ; then
                         		save_cube='No'
@@ -419,13 +420,18 @@ do
         		fi
 
 			if [ $Index_Type = 16 ] ; then
-                		echo "    The cutoff for the transition decomposition is : ${cutoff}"
-                		read -p "    Please enter the new cutoff : " cutoff
+                		echo "    The cutoff for the transition decomposition is: ${cutoff}"
+                		read -p "    Please enter the new cutoff: " cutoff
         		fi
 
 			if [ $Index_Type = 17 ] ; then
-                                echo "    The name for the Tozer file is by default : Tozer-state"
-                                read -p "    Please enter the new suffixe : " name
+                                echo "    The name for the Tozer file is by default: Tozer-state"
+                                read -p "    Please enter the new suffixe: " name
+                        fi
+
+			if [ $Index_Type = 18 ] ; then
+                                echo "    The path toward orca_plot is by default: ${path}"
+                                read -p "    Please enter the new path: " ${path}
                         fi
        			
 		        if [ $Index_Type = 5 ]; then
@@ -750,8 +756,8 @@ EOF
                 		echo "            If the ground state is the initaial state, please answer 0 for the initial state value." 
                 		echo "            Otherwise, write the state number."
                 		echo "            This computation may take some time."
-                		read -p "    Initial State : " Initial_State
-                		read -p "    Final State : " Final_State
+                		read -p "    Initial State: " Initial_State
+                		read -p "    Final State: " Final_State
                 		echo "    =============================================================="
                 		echo "" 
                 		Dct_file=Dct.txt
@@ -897,7 +903,7 @@ EOF
                 		if [ ${Initial_State} = 0 ] ; then
                         		echo " ------- ERROR ---------"
                         		echo ""
-                        		echo " Please Chose a Valid State !!"
+                        		echo " Please Chose a Valid State."
                         		echo ""
                         		echo " ----------------------"
                         		echo ""
@@ -905,7 +911,7 @@ EOF
                 		if [ ${Final_State} = 0 ] ; then
                         		echo " ------- ERROR ---------"
                         		echo ""
-                        		echo " Please Chose a Valid State !!"
+                        		echo " Please Chose a Valid State."
                         		echo ""
                         		echo " ----------------------"
                         		echo ""
@@ -1111,8 +1117,8 @@ EOF
 			elif [ $Index_Type = 4 ]; then
                 		echo "     Note : This index is still in implementation"
                 		echo "            Please give the CUBE-file of the electron density of the final and the initial state ."
-                		read -p "    CUBE-file of the Electron Density of the Initial State : " Initial_State_file
-                		read -p "    CUBE-file of the Electron Density of the Final State : " Final_State_file
+                		read -p "    CUBE-file of the Electron Density of the Initial State: " Initial_State_file
+                		read -p "    CUBE-file of the Electron Density of the Final State: " Final_State_file
                 		echo "    =============================================================="
                 		python excited_index.py double_overlap_cube ${Initial_State_file} ${Final_State_file}
                 		echo "    =============================================================="
