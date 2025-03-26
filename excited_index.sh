@@ -180,7 +180,7 @@ do
                                         whiling=''
                                         while [[ ! $whiling =~ ^(n|y)$ ]]
                                         do
-                                                echo "    The default name of the ORB-file would be: ${aux_file}"
+                                                echo "    The default name of the ORB-file would be: ${orb_file}"
                                                 read -p "    Is this the one you want (y/n): " whiling
                                         done
                                         if [ $whiling = n ] ; then
