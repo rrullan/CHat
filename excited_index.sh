@@ -3,7 +3,7 @@ transition_file=transition.txt
 grid_size=80
 save_cube='No'
 cutoff=0.00
-
+path=/home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/
 
 echo "                                                       .-.        .-."
 echo "                                                     -  )      .'  /"
@@ -501,7 +501,7 @@ do
                                 	version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
                                 	if [ ${version} = 5 ]; then
                                         	for occ in ${MO_occ[@]}; do
-                                                	/home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF 
+                                                	${path}orca_plot ${gbw_file} -i << EOF 
                                                 	4
                                                 	${grid_size}
                                                 	2
@@ -514,7 +514,7 @@ EOF
                                         	done
 
                                         	for virt in ${MO_virt[@]}; do
-                                                	/home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
+                                                	${path}orca_plot ${gbw_file} -i << EOF
                                                		4
                                                 	${grid_size}
                                                 	2
@@ -528,7 +528,7 @@ EOF
 
                                 	elif [ ${version} = 6 ]; then
                                         	for occ in ${MO_occ[@]}; do
-                                                	/Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF 
+                                                	${path}orca_plot ${gbw_file} -i << EOF 
                                                 	4
                                                 	${grid_size}
                                                 	2
@@ -541,7 +541,7 @@ EOF
                                         	done
 
                                         	for virt in ${MO_virt[@]}; do
-                                                	/Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF
+                                                	${path}orca_plot ${gbw_file} -i << EOF
                                                 	4
                                                 	${grid_size}
                                                 	2
@@ -561,7 +561,7 @@ EOF
 					for orb in ${List_orb}; do
 						version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
 						if [ ${version} = 5 ]; then
-							/home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
+							${path}orca_plot ${gbw_file} -i << EOF
                                                 	4
                                                 	${grid_size}
                                                 	2
@@ -572,7 +572,7 @@ EOF
                                                 	11
 EOF
 						elif [ ${version} = 6 ]; then
-							/Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF
+							${path}orca_plot ${gbw_file} -i << EOF
                                                 	4
                                                 	${grid_size}
                                                 	2
@@ -594,7 +594,7 @@ EOF
 					for (( orb=${begin_orb}; orb<(${ending_orb} + 1); orb ++ )); do
                                                 version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
                                                 if [ ${version} = 5 ]; then
-                                                        /home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
+                                                        ${path}orca_plot ${gbw_file} -i << EOF
                                                         4
                                                         ${grid_size}
                                                         2
@@ -605,7 +605,7 @@ EOF
                                                         11
 EOF
                                                 elif [ ${version} = 6 ]; then
-                                                        /Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF
+                                                        ${path}orca_plot ${gbw_file} -i << EOF
                                                         4
                                                         ${grid_size}
                                                         2
@@ -672,7 +672,7 @@ EOF
 				version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
 				if [ ${version} = 5 ]; then
                 			for occ in ${MO_occ[@]}; do
-                        			/home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF 
+                        			${path}orca_plot ${gbw_file} -i << EOF 
                         			4
                         			${grid_size}
                         			2
@@ -685,7 +685,7 @@ EOF
                 			done
 
                 			for virt in ${MO_virt[@]}; do
-                        			/home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
+                        			${path}orca_plot ${gbw_file} -i << EOF
                         			4
                         			${grid_size}
                         			2
@@ -699,7 +699,7 @@ EOF
 
 				elif [ ${version} = 6 ]; then
                                         for occ in ${MO_occ[@]}; do
-                                                /Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF 
+                                                ${path}orca_plot ${gbw_file} -i << EOF 
                                                 4
                                                 ${grid_size}
                                                 2
@@ -712,7 +712,7 @@ EOF
                                         done
 
                                         for virt in ${MO_virt[@]}; do
-                                                /Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF
+                                                ${path}orca_plot ${gbw_file} -i << EOF
                                                 4
                                                 ${grid_size}
                                                 2
@@ -799,7 +799,7 @@ EOF
 					version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
                                 	
 					if [ ${version} = 5 ]; then
-                        			/home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
+                        			${path}orca_plot ${gbw_file} -i << EOF
                                 		4
                                 		${grid_size}
                                 		5
@@ -812,7 +812,7 @@ EOF
 EOF
 				
 					elif [ ${version} = 6 ]; then
-						/Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF
+						${path}orca_plot ${gbw_file} -i << EOF
                                                 4
                                                 ${grid_size}
                                                 5
@@ -839,7 +839,7 @@ EOF
 
 					version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
                                         if [ ${version} = 5 ]; then
-                                                /home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
+                                                ${path}orca_plot ${gbw_file} -i << EOF
                                                 4
                                                 ${grid_size}
                                                 5
@@ -852,7 +852,7 @@ EOF
 EOF
 
                                         elif [ ${version} = 6 ]; then
-                                                /Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF
+                                                ${path}orca_plot ${gbw_file} -i << EOF
                                                 4
                                                 ${grid_size}
                                                 5
@@ -941,7 +941,7 @@ EOF
                                 version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
                                 if [ ${version} = 5 ]; then
                                         for occ in ${MO_occ[@]}; do
-                                                /home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF 
+                                                ${path}orca_plot ${gbw_file} -i << EOF 
                                                 4
                                                 ${grid_size}
                                                 2
@@ -954,7 +954,7 @@ EOF
                                         done
 
                                         for virt in ${MO_virt[@]}; do
-                                                /home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
+                                                ${path}orca_plot ${gbw_file} -i << EOF
                                                 4
                                                 ${grid_size}
                                                 2
@@ -968,7 +968,7 @@ EOF
 
                                 elif [ ${version} = 6 ]; then
                                         for occ in ${MO_occ[@]}; do
-                                                /Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF 
+                                                ${path}orca_plot ${gbw_file} -i << EOF 
                                                 4
                                                 ${grid_size}
                                                 2
@@ -981,7 +981,7 @@ EOF
                                         done
 
                                         for virt in ${MO_virt[@]}; do
-                                                /Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF
+                                                ${path}orca_plot ${gbw_file} -i << EOF
                                                 4
                                                 ${grid_size}
                                                 2
@@ -1032,7 +1032,7 @@ EOF
                                 version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
                                 if [ ${version} = 5 ]; then
                                         for occ in ${MO_occ[@]}; do
-                                                /home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF 
+                                                ${path}orca_plot ${gbw_file} -i << EOF 
                                                 4
                                                 ${grid_size}
                                                 2
@@ -1045,7 +1045,7 @@ EOF
                                         done
 
                                         for virt in ${MO_virt[@]}; do
-                                                /home/ssteinma/softs/orca_5_0_4_linux_x86-64_openmpi411/orca_plot ${gbw_file} -i << EOF
+                                                ${path}orca_plot ${gbw_file} -i << EOF
                                                 4
                                                 ${grid_size}
                                                 2
@@ -1059,7 +1059,7 @@ EOF
 
                                 elif [ ${version} = 6 ]; then
                                         for occ in ${MO_occ[@]}; do
-                                                /Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF 
+                                                ${path}orca_plot ${gbw_file} -i << EOF 
                                                 4
                                                 ${grid_size}
                                                 2
@@ -1072,7 +1072,7 @@ EOF
                                         done
 
                                         for virt in ${MO_virt[@]}; do
-                                                /Xnfs/chimie/debian11/orca/orca_6_0_1/orca_plot ${gbw_file} -i << EOF
+                                                ${path}orca_plot ${gbw_file} -i << EOF
                                                 4
                                                 ${grid_size}
                                                 2
