@@ -11,7 +11,7 @@ How to use it:
  -For Orca: you should have the file.out, file.gbw and eventually the file.cis in the directory.
             It should work either for Orca 5 and Orca 6.
 
-WARNING: for Orca, you should give the path to orca\_plot for your architecture in excited\_index.sh
+WARNING: for Orca, you should give the path to orca\_plot for your architecture in excited\_index.sh (or option 18)
 
 Once you have all the files:
 bash excited\_index.sh 
