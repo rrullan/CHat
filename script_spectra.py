@@ -30,7 +30,7 @@ def extract_absorption_spectra_orca(file):
     flag_spec = 0
     flag_spec_in = 0
 
-    D,P,M = [],[],[]
+    abs_elec,abs_velo,cd_elec, cd_velo = [],[],[],[]
 
     for line in codecs.open(file, 'r',encoding="utf-8"):
         if "Program Version" in line:
@@ -58,9 +58,11 @@ def extract_absorption_spectra_orca(file):
 
             elif "CD" in line and "ELECTRIC DIPOLE" in line:
                 abs_ed,abs_vd,cd_ed,cd_vd = 0,0,1,0
-
             elif "CD" in line and "VELOCITY DIPOLE" in line:
                 abs_ed,abs_vd,cd_ed,cd_vd = 0,0,0,1
+            elif "CD" in line and version <= 5:
+                abs_ed,abs_vd,cd_ed,cd_vd = 0,0,1,0
+
 
         elif flag_spec:
             flag_spec -=1
@@ -74,18 +76,20 @@ def extract_absorption_spectra_orca(file):
                     if version >= 6:
                         state_transition.append(lsplit[0]+" "+lsplit[1]+" "+lsplit[2])
                         transition_energy.append(float(lsplit[3]))
-                        D.append([float(lsplit[-3]),float(lsplit[-2]),float(lsplit[-1])])
+                        abs_elec.append([float(lsplit[-3]),float(lsplit[-2]),float(lsplit[-1])])
                     else:
                         state_transition.append(lsplit[0])
                         transition_energy.append(float(lsplit[1]))
-                        D.append([float(lsplit[-3]),float(lsplit[-2]),float(lsplit[-1])])
+                        abs_elec.append([float(lsplit[-3]),float(lsplit[-2]),float(lsplit[-1])])
                 elif abs_vd:
-                    P.append([float(lsplit[-3]),float(lsplit[-2]),float(lsplit[-1])])
+                    abs_velo.append([float(lsplit[-3]),float(lsplit[-2]),float(lsplit[-1])])
                 elif cd_ed:
-                    M.append([float(lsplit[-3]),float(lsplit[-2]),float(lsplit[-1])])
+                    cd_elec.append([float(lsplit[-3]),float(lsplit[-2]),float(lsplit[-1])])
+                elif cd_vd:
+                    cd_velo.append([float(lsplit[-3]),float(lsplit[-2]),float(lsplit[-1])])
 
     transition_energy = np.array(transition_energy)
-    return center_of_mass, state_transition, transition_energy, D, P, M
+    return center_of_mass, state_transition, transition_energy, abs_elec, abs_velo, cd_elec, cd_velo
 
 
 def oscillator_force(transition_energy, moments):
@@ -105,12 +109,16 @@ def oscillator_force(transition_energy, moments):
 
     return fosc
 
-def compute_spectra(transition_energy, moments, lambda_min=300, lambda_max=900, n_points=500, gauss=0.03, plot=False):
+def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max=900, n_points=500, gauss=0.3, plot=False, show=False, file="",spectra="all",fmt="png"):
     """
     Computes the spectra
     The gauss factor provided is the enlargement of the peaks using gaussian fitting.
     If a list is provided, it will apply each term to each transition
     Lambda are in nm
+
+    If plot is True and show is false, save in the same folder as file
+                        show is true, show every spectra in one graph
+    spectra can be : "all", "x", "xy" ... or a list of them
     """
     fosc = oscillator_force(transition_energy, moments)
 
@@ -119,7 +127,7 @@ def compute_spectra(transition_energy, moments, lambda_min=300, lambda_max=900, 
     rac_pi = (2*np.pi)**(1/2)
     if type(gauss) is list:
         gauss = np.array(gauss)
-    gauss_corr = gauss / FWHM
+    gauss_corr = gauss / FWHM / convert_au_to_ev
 
     lambda_list = np.linspace(lambda_min,lambda_max,n_points,endpoint=True)
     lambda_energy = h * c /(lambda_list*1e-9) * convert_J_to_au
@@ -132,28 +140,101 @@ def compute_spectra(transition_energy, moments, lambda_min=300, lambda_max=900, 
     else:
         gauss_x = -distance**2 / 2 / gauss_corr**2
 
-
-    spectra_x = np.einsum("j,ij->i",fosc[:,0]/gauss_corr,np.exp(gauss_x)) / rac_pi
-    spectra_y = np.einsum("j,ij->i",fosc[:,1]/gauss_corr,np.exp(gauss_x)) / rac_pi
-    spectra_z = np.einsum("j,ij->i",fosc[:,2]/gauss_corr,np.exp(gauss_x)) / rac_pi
+    spectra_x = np.einsum("j,ij->i",fosc[:,0]/gauss_corr,np.exp(gauss_x)) / rac_pi /3
+    spectra_y = np.einsum("j,ij->i",fosc[:,1]/gauss_corr,np.exp(gauss_x)) / rac_pi /3
+    spectra_z = np.einsum("j,ij->i",fosc[:,2]/gauss_corr,np.exp(gauss_x)) / rac_pi /3
 
     spectra_xy = spectra_x + spectra_y
     spectra_xz = spectra_x + spectra_z
     spectra_yz = spectra_y + spectra_z
 
     spectra_xyz = spectra_x + spectra_y + spectra_z
+    norm = np.max(spectra_xyz)
+    spectra_x = spectra_x / norm*DO
+    spectra_y = spectra_y / norm*DO
+    spectra_z = spectra_z / norm*DO
+    spectra_xy = spectra_xy / norm*DO
+    spectra_xz = spectra_xz / norm*DO
+    spectra_yz = spectra_yz / norm*DO
+    spectra_xyz = spectra_xyz / norm*DO
 
+    #x y z xy xz yz xyz
+    Choice_spectra = np.zeros(7)
 
+    if spectra == "all":
+        Choice_spectra = np.ones(7)
+    elif type(spectra) is str:
+        if spectra == "x":
+            Choice_spectra[0] = 1
+        if spectra == "y":
+            Choice_spectra[1] = 1
+        if spectra == "z":
+            Choice_spectra[2] = 1
+        if spectra == "xy":
+            Choice_spectra[3] = 1
+        if spectra == "xz":
+            Choice_spectra[4] = 1
+        if spectra == "yz":
+            Choice_spectra[5] = 1
+        if spectra == "xyz":
+            Choice_spectra[6] = 1
+    else:
+        if "x" in spectra:
+            Choice_spectra[0] = 1
+        if "y" in spectra:
+            Choice_spectra[1] = 1
+        if "z" in spectra:
+            Choice_spectra[2] = 1
+        if "xy" in spectra:
+            Choice_spectra[3] = 1
+        if "xz" in spectra:
+            Choice_spectra[4] = 1
+        if "yz" in spectra:
+            Choice_spectra[5] = 1
+        if "xyz" in spectra:
+            Choice_spectra[6] = 1
 
 
     if plot:
         import matplotlib.pyplot as plt
-        plt.plot(lambda_list,spectra_x)
-        plt.show()
+        if not show:
+            fig,ax = plt.subplots(figsize=(8,6),dpi=200)
+            plt.rcParams.update({'font.size': 15})
+            plt.rcParams['svg.fonttype'] = 'none'
+        colors = ["red","blue","green","darkred","cyan","lime","magenta","teal","purple","darkorange"]
+        if Choice_spectra[0]:
+            plt.plot(lambda_list,spectra_x,'-',label="X",color="cyan")
+        if Choice_spectra[1]:
+            plt.plot(lambda_list,spectra_y,'-',label="Y",color="magenta")
+        if Choice_spectra[2]:
+            plt.plot(lambda_list,spectra_z,'-',label="Z",color="yellow")
+        if Choice_spectra[3]:
+            plt.plot(lambda_list,spectra_xy,'-',label="XY",color="blue")
+        if Choice_spectra[4]:
+            plt.plot(lambda_list,spectra_xz,'-',label="XZ",color="green")
+        if Choice_spectra[5]:
+            plt.plot(lambda_list,spectra_yz,'-',label="YZ",color="red")
+        if Choice_spectra[6]:
+            plt.plot(lambda_list,spectra_xyz,'-',label="XYZ",color="black")
+        plt.legend()
+        plt.xlabel("Wavelength (nm)")
+        plt.ylabel("Absorption")
+
+        if show:
+            plt.show()
+        else:
+            dirr = file.split("/")[:-1]
+            dirr = "".join(dirr)
+            plt.savefig(dirr + "spectra." + fmt)
+
+    return lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz
+
+
 
 
 if __name__ == "__main__":
 
-    center_of_mass, state_transition, transition_energy, D, P, M = extract_absorption_spectra_orca("Demo/Fcenter_TDA_PBE_TZVP.out")
+    center_of_mass, state_transition, transition_energy, abs_elec, P, M, L = extract_absorption_spectra_orca("Demo/Fcenter_TDA_PBE_TZVP.out")
     # fosc = oscillator_force(transition_energy, D)
-    compute_spectra(transition_energy, D, plot=True)
+    compute_spectra(transition_energy, abs_elec, plot=True,spectra="all",show=True)
+    # compute_spectra(transition_energy, D, plot=True,)
