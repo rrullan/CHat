@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 """
-Hello
+This script contains the function used to compute the color using an output file
 """
 
 import numpy as np
 import codecs
+import sys
 from script_spectra import *
 
 #Dicts for eye and luminants
@@ -214,7 +215,7 @@ def srgb(X,Y,Z):
     return R,G,B
 
 
-def compute_all_colors(eye,lamp,spectrum,print_data=True):
+def compute_all_colors(file,eye,lamp,spectrum,print_data=True,save_data=True,save_color=True):
     """
     Computes and prints the color of a spectrum in all available spaces
     """
@@ -239,8 +240,27 @@ def compute_all_colors(eye,lamp,spectrum,print_data=True):
         print('# RGB : R = {:<10.4f} G = {:^10.4f} B = {:>10.4f}   #'.format(R,G,B))
         print("########################################################")
 
+    folder = file.split("/")[:-1]
+    dirr = "".join(folder)
 
-def compute_all_colors_from_file(file,moment="abs_elec",spectrum="xyz",eye_dict="10deg",lamp_dict="D65"):
+    if save_data:
+        with open(dirr+"/color.txt","w") as f:
+
+            f.write('Colors in the spaces :\n')
+            f.write('XYZ : X = {:<10.4f} Y = {:^10.4f} Z = {:>10.4f}\n'.format(X,Y,Z))
+            f.write('xyz : x = {:<10.4f} y = {:^10.4f} z = {:>10.4f}\n'.format(x,y,z))
+            f.write('Luv : L = {:<10.4f} u = {:^10.4f} v = {:>10.4f}\n'.format(L_ab,us,vs))
+            f.write('Lab : L = {:<10.4f} a = {:^10.4f} b = {:>10.4f}\n'.format(L_ab,a,b))
+            f.write('RGB : R = {:<10.4f} G = {:^10.4f} B = {:>10.4f}\n'.format(R,G,B))
+
+    if save_color:
+        import matplotlib.image as mpimg
+        image = np.zeros((500,500,3)) + np.array([R/255,G/255,B/255])
+        mpimg.imsave(dirr + "/color.png",image)
+
+
+
+def compute_all_colors_from_file(file,moment="abs_elec",spectrum="xyz",eye_dict="10deg",lamp_dict="D65",DO=1,gauss=0.3):
     """
     Compute all the colors from an input file
 
@@ -261,26 +281,28 @@ def compute_all_colors_from_file(file,moment="abs_elec",spectrum="xyz",eye_dict=
     """
 
 
-    center_of_mass, state_transition, transition_energy, abs_elec, abs_velo, cd_elec, cd_velo = extract_absorption_spectra_orca(file)
+    center_of_mass, state_transition, transition_energy, abs_elec, abs_velo, cd_elec, cd_velo = extract_absorption_spectra(file)
 
     if moment == "abs_elec":
-        lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, abs_elec, lambda_min=360, lambda_max=830, n_points=471)
+        lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, abs_elec, lambda_min=360, lambda_max=830, n_points=471, gauss=gauss, DO=OD)
 
     elif moment == "abs_velo":
-        lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, abs_velo, lambda_min=360, lambda_max=830, n_points=471)
+        lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, abs_velo, lambda_min=360, lambda_max=830, n_points=471, gauss=gauss, DO=OD)
 
     elif moment == "cd_elec":
-        lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, cd_elec, lambda_min=360, lambda_max=830, n_points=471)
+        lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, cd_elec, lambda_min=360, lambda_max=830, n_points=471, gauss=gauss, DO=OD)
 
     elif moment == "cd_velo":
-        lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, cd_velo, lambda_min=360, lambda_max=830, n_points=471)
+        lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, cd_velo, lambda_min=360, lambda_max=830, n_points=471, gauss=gauss, DO=OD)
 
+    if eye_dict in eye:
+        eye_chosen = read_txt(eye[eye_dict])
+    else:
+        eye_chosen = read_txt(eye)
 
-    eye_chosen = read_txt(eye[eye_dict])
-    lum_chosen_file = lum[lamp_dict]
 
     if lamp_dict == "A":
-        lamp = illuminant_A(lambda_list)
+        lamp = illuminant_A(eye[0])
     elif lamp_dict == "C":
         lum_lambda_list, lamp = read_txt(lum[lamp_dict])
         lambda_list = lum_lambda_list[12:]
@@ -290,6 +312,9 @@ def compute_all_colors_from_file(file,moment="abs_elec",spectrum="xyz",eye_dict=
     elif lamp_dict == "D65":
         lum_lambda_list, lamp = read_txt(lum[lamp_dict])
         lamp = lamp[60:]
+    else:
+        lum_lambda_list, lamp = read_txt(lamp_dict)
+
 
     if spectrum == "x": spectrum = 100 * 10**(-spectra_x)
     elif spectrum == "y": spectrum = 100 * 10**(-spectra_y)
@@ -299,7 +324,7 @@ def compute_all_colors_from_file(file,moment="abs_elec",spectrum="xyz",eye_dict=
     elif spectrum == "yz": spectrum = 100 * 10**(-spectra_yz)
     elif spectrum == "xyz": spectrum = 100 * 10**(-spectra_xyz)
 
-    compute_all_colors(eye_chosen,lamp,spectrum,print_data=True)
+    compute_all_colors(file,eye_chosen,lamp,spectrum,print_data=True,save_data=True,save_color=True)
 
 
 
@@ -348,4 +373,15 @@ if __name__ == "__main__":
     # plt.legend()
     # plt.show()
 
-    compute_all_colors_from_file("Demo/Fcenter_TDA_PBE_TZVP.out",moment="abs_elec",spectrum="xyz",eye_dict="10deg",lamp_dict="D65")
+    # compute_all_colors_from_file("Demo/Fcenter_TDA_PBE_TZVP.out",moment="abs_elec",spectrum="xyz",eye_dict="10deg",lamp_dict="D65")
+
+    file = sys.argv[1]
+    eye_chosen = sys.argv[2]
+    lamp_chosen = sys.argv[3]
+    type_spectra = sys.argv[4]
+    chosen_spectra = sys.argv[5]
+    OD = float(sys.argv[6])
+    gauss = float(sys.argv[7])
+
+
+    compute_all_colors_from_file(file,moment=type_spectra,spectrum=chosen_spectra,eye_dict=eye_chosen,lamp_dict=lamp_chosen,DO=OD,gauss=gauss)

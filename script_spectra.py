@@ -2,19 +2,60 @@
 # -*- coding: utf-8 -*-
 
 """
-Hello
+This script contains the function used to compute and plot spectral data
 """
 
 import numpy as np
 import codecs
+import sys
 
 convert_au_to_cm = 219474.63
 convert_au_to_ev = 27.211386246
 convert_J_to_ev = 6.24150907e18
 convert_J_to_au = 2.29371228e17
+convert_ev_to_cm = 8065.54
 h = 6.626068e-34
 c = 299_792_458
 e = 1.609217733e-19
+
+
+def extract_absorption_spectra_cp2k(file):
+    """
+    extract_absorption_pepctra_cp2k(file)
+
+    Extract the Absorption spectra from a CP2K output
+    """
+
+
+    flag_states = 0
+    flag_dipole = 0
+    state_transition = []
+    transition_energy = []
+    abs_velo = []
+
+
+    for line in codecs.open(file, 'r',encoding="utf-8"):
+        if "Transition dipoles" in line:
+            flag_states = 4
+
+        elif flag_states:
+            flag_states -= 1
+            if not flag_states:
+                flag_dipole = 1
+
+        elif flag_dipole:
+            if len(line) <= 4:
+                break
+            lsplit = line.split()
+            state_transition.append(int(lsplit[1]))
+            transition_energy.append(float(lsplit[2]) * convert_ev_to_cm)
+            abs_velo.append([float(lsplit[3]),float(lsplit[4]),float(lsplit[5])])
+
+    transition_energy = np.array(transition_energy)
+
+    return state_transition, transition_energy, abs_velo
+
+
 
 def extract_absorption_spectra_orca(file):
     """
@@ -92,6 +133,32 @@ def extract_absorption_spectra_orca(file):
     return center_of_mass, state_transition, transition_energy, abs_elec, abs_velo, cd_elec, cd_velo
 
 
+
+def extract_absorption_spectra(file):
+    """
+    Extract data from an orca or a cp2k file
+    """
+
+    orca_file = 0
+    count = 0
+    for line in open(file):
+        count+=1
+        if count==3:
+            if  "O   R   C   A" in line: orca_file = 1
+            break
+    if orca_file: center_of_mass, state_transition, transition_energy, abs_elec, abs_velo, cd_elec, cd_velo = extract_absorption_spectra_orca(file)
+    else:
+        state_transition, transition_energy, abs_velo = extract_absorption_spectra_cp2k(file)
+        center_of_mass = np.array([0,0,0])
+        abs_elec = None
+        cd_elec = None
+        cd_velo = None
+
+    return center_of_mass, state_transition, transition_energy, abs_elec, abs_velo, cd_elec, cd_velo
+
+
+
+
 def oscillator_force(transition_energy, moments):
     """
     Computes the oscillator force from the transition energy and the moments
@@ -122,7 +189,6 @@ def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max
     """
     fosc = oscillator_force(transition_energy, moments)
 
-
     FWHM = 2*(2*np.log(2))**(1/2)
     rac_pi = (2*np.pi)**(1/2)
     if type(gauss) is list:
@@ -149,6 +215,8 @@ def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max
     spectra_yz = spectra_y + spectra_z
 
     spectra_xyz = spectra_x + spectra_y + spectra_z
+
+
     norm = np.max(spectra_xyz)
     spectra_x = spectra_x / norm*DO
     spectra_y = spectra_y / norm*DO
@@ -234,7 +302,28 @@ def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max
 
 if __name__ == "__main__":
 
-    center_of_mass, state_transition, transition_energy, abs_elec, P, M, L = extract_absorption_spectra_orca("Demo/Fcenter_TDA_PBE_TZVP.out")
+    # center_of_mass, state_transition, transition_energy, abs_elec, P, M, L = extract_absorption_spectra_orca("Demo/Fcenter_TDA_PBE_TZVP.out")
     # fosc = oscillator_force(transition_energy, D)
-    compute_spectra(transition_energy, abs_elec, plot=True,spectra="all",show=True)
+    # compute_spectra(transition_energy, abs_elec, plot=True,spectra="all",show=True)
     # compute_spectra(transition_energy, D, plot=True,)
+    file = sys.argv[1]
+    type_spectra = sys.argv[2]
+    chosen_spectra = sys.argv[3]
+    OD = float(sys.argv[4])
+    gauss = float(sys.argv[5])
+    min_lambda = float(sys.argv[6])
+    max_lambda = float(sys.argv[7])
+    num_points = int(sys.argv[8])
+    fmt = sys.argv[9]
+
+    center_of_mass, state_transition, transition_energy, abs_elec, abs_velo, cd_elec, cd_velo = extract_absorption_spectra(file)
+
+    if type_spectra == "abs_elec": moments = abs_elec
+    if type_spectra == "abs_velo": moments = abs_velo
+    if type_spectra == "cd_elec": moments = cd_elec
+    if type_spectra == "cd_velo": moments = cd_velo
+
+    if chosen_spectra != "all": chosen_spectra = chosen_spectra.split(",")
+
+    compute_spectra(transition_energy, moments, DO=OD, lambda_min=min_lambda, lambda_max=max_lambda, n_points=num_points, gauss=gauss, plot=True, show=False, file=file,spectra=chosen_spectra,fmt=fmt)
+
