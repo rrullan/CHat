@@ -115,6 +115,11 @@ do
         		read -p "    Enter the filename: " input_file
         		echo "    Please enter the name of the orbital (cube) obtained with the CP2K calculation"
         		read -p "    Enter the filename: " orb_file
+		else
+				echo "   The file ${1} will be used as the output, ${2} as the auxiliary and ${3} as the orbital"
+        		input_file=${1}
+				aux_file=${2}
+				orb_file=${3}
 		fi
 		while [[ ! ($Index_Type -eq 20) && ! ($Index_Type -eq 21)  ]]
 		do
@@ -130,6 +135,8 @@ do
         		echo "               - Tozer Index: 1"
         		echo "               - DCT Index: 2"
         		echo ""
+				echo "               - Absorption / CD Spectra: 6"
+				echo "               - Molecule Color: 7"
         		echo ""
 			echo "               - Change OUT-file: 11"
 			echo "               - Change INP-file: 12"
@@ -292,7 +299,270 @@ do
 
                 			elif [ $Index_Type = 2 ]; then
               					echo "     Not implemented yet.    "
-                			fi
+					elif [ $Index_Type = 6 ]; then
+			spectra_chosen="all"
+			moment="Absorption via Velocity Dipole Moments"
+			moment_python="abs_velo"
+			optic_dens=1
+			lambda_min=300
+			lambda_max=900
+			num_points=500
+			format="png"
+			gauss="0.3"
+				while [[ ! ($Index_Type -eq 20) && ! ($Index_Type -eq 21)  ]]
+				do
+					echo "    ============================================================="
+					echo "                       Absorption / CD Spectra"
+					echo "    ============================================================="
+					echo "         Type of spectra : ${moment}"
+					echo "         Spectra chosen : ${spectra_chosen}"
+					echo "         Optical Density : ${optic_dens}"
+					echo "         Gaussian width : ${gauss}"
+					echo "         Minimal Wavelength (nm) : ${lambda_min}"
+					echo "         Maximal Wavelength (nm) : ${lambda_max}"
+					echo "         Number of Points : ${num_points}"
+					echo "         Format : ${format}"
+					echo "    =============================================================="
+					echo "         Change:"
+					echo ""
+					echo "               - Type of spectra: 1"
+					echo "               - Spectra chosen: 2"
+					echo "               - Optical Density: 3"
+					echo "               - Gaussian Width: 4"
+					echo "               - Minimal Wavelength: 5"
+					echo "               - Maximal Wavelength: 6"
+					echo "               - Number of Points: 7"
+					echo "               - Format: 8"
+					echo ""
+					echo "               - Plot: 10"
+					echo "               - Exit: 21"
+					echo "    --------------------------------------------------------------"
+					read -p "    Enter a type: " Index_Type
+					echo "    =============================================================="
+							
+							
+					if [ $Index_Type = 1 ]; then
+                		echo "        Please enter the type of spectra :"
+                		echo "            Absorption via Velocity Dipole Moments : 1"
+                		read -p "   Enter a number : " num_moment
+						if [ $num_moment = 1 ]; then
+							moment="Absorption via Velocity Dipole Moments"
+							moment_python="abs_velo"
+						fi
+						
+					elif [ $Index_Type = 2 ]; then
+                		echo "        Please enter the type of spectra :"
+                		echo "           The possibilities are all, x, y, z, xy, xz, yz, xyz and any combination using \",\" as a separator"
+                		read -p "   Enter the type : " spectra_chosen
+						
+					elif [ $Index_Type = 3 ]; then
+                		echo "        Please enter the Optical Density :"
+                		read -p "   Enter a number : " optic_dens
+						
+
+					elif [ $Index_Type = 4 ]; then
+                		echo "        Please enter the Gaussian Width :"
+                		read -p "   Enter a number : " gauss
+						
+					elif [ $Index_Type = 5 ]; then
+                		echo "        Please enter the Minimal Wavelength :"
+                		read -p "   Enter a number : " lambda_min
+					
+					elif [ $Index_Type = 6 ]; then
+                		echo "        Please enter the Maximal Wavelength :"
+                		read -p "   Enter a number : " lambda_max
+					
+					elif [ $Index_Type = 7 ]; then
+                		echo "        Please enter the Number of points :"
+                		read -p "   Enter a number : " num_points
+					
+					elif [ $Index_Type = 8 ]; then
+                		echo "        Please enter the Format of the ouptut file (png or svg are recommended) :"
+                		read -p "   Enter the format : " format
+					
+					elif [ $Index_Type = 10 ]; then
+						python script_spectra.py ${input_file} ${moment_python} ${spectra_chosen} ${optic_dens} ${gauss} ${lambda_min} ${lambda_max} ${num_points} ${format}
+                		rm -rf __pycache__
+					else	
+					echo ""
+							echo "#########################################################################"
+							echo ""
+							echo "                 ERROR: Please choose a valid option "
+							echo ""
+							
+							echo "       ,"
+							echo "       \\-._           /\   "
+							echo "        \\  \-..____,./  \. "
+							echo "         :\.         /    \\. "
+							echo "         :  )       :      : \ "
+							echo "          ;/        \   ;  :  :"
+							echo "          )..      .. .:.\.;  :"
+							echo "         /::...  .:::...   \ ;"
+							echo "         ; _ \    __        /:\ "
+							echo "         \:o>   /\o_>      ;:. \."
+							echo "        \-\.__ ;   __..--- /:.   \ "
+							echo "        === \_/   ;=====_.\:.     ;"
+							echo "         ,/\\--\...\--....        ;"
+							echo "              ;                    ;"
+							echo "            .\                      ;"
+							echo "          .\                        ;"
+							echo "        .\     ..     ,      .       ;"
+							echo "       :       ::..  /      ;::.     :"
+							echo "      /      \.;::.  :       ;:..    ;"
+							echo "     :         ::.   :       ;:.    ;"
+							echo "     :         ::     ;:..   :.    ;"
+							echo "      :       :;      :::....:     :"
+							echo "      /\     ,/ \      ;:::::;     ;"
+							echo "    .:. \:..:    :     ; \.--:     ;"
+							echo "   ::.  :\\  \-.,,;     ;\   ;     ;"
+							echo ".-\. _.\\      / \;      \,__:      \ "
+							echo "\---\    \----\   ;      /    \,.,,,/"
+							echo "                   \----\             "
+							echo "#########################################################################"
+							echo ""	
+					fi
+					done
+					elif [ $Index_Type = 7 ]; then
+			eye="CIE 1964 10°"
+			eye_python="10deg"
+			lamp="D65"
+			spectra_chosen="xyz"
+			moment="Absorption via Velocity Dipole Moments"
+			moment_python="abs_velo"
+			optic_dens=1
+			gauss="0.3"
+				while [[ ! ($Index_Type -eq 20) && ! ($Index_Type -eq 21)  ]]
+				do
+					echo "    ============================================================="
+					echo "                       Color computation"
+					echo "    ============================================================="
+					echo "         Observer : ${eye}"
+					echo "         Illuminant : ${lamp}"
+					echo "         Type of spectra : ${moment}"
+					echo "         Spectra chosen : ${spectra_chosen}"
+					echo "         Optical Density : ${optic_dens}"
+					echo "         Gaussian width : ${gauss}"
+					echo "    =============================================================="
+					echo "         Change:"
+					echo ""
+					echo "               - Observer: 1"
+					echo "               - Illuminant: 2"
+					echo "               - Type of spectra: 3"
+					echo "               - Spectra chosen: 4"
+					echo "               - Optical Density: 5"
+					echo "               - Gaussian Width: 6"
+					echo ""
+					echo "               - Plot: 10"
+					echo "               - Exit: 21"
+					echo "    --------------------------------------------------------------"
+					read -p "    Enter a type: " Index_Type
+					echo "    =============================================================="
+							
+					
+					if [ $Index_Type = 1 ]; then
+                		echo "        Please enter the observer :"
+                		echo "           The possibilities are :"
+                		echo "                  CIE 1931 2° : 1"
+                		echo "                  CIE 1964 10° : 2"
+                		echo "                  Name of a file to load"
+						echo "   Note:  The file needs to start from 360nm to 830nm with a step of 1"
+                		read -p "   Enter a number of name of the file : " eye_selection
+						if [ $eye_selection = 1 ]; then
+							eye="CIE 1931 2°"
+							eye_python="2deg"
+						elif [ $eye_selection = 2 ]; then
+							eye="CIE 1964 10°"
+							eye_python="10deg"
+						else
+							eye=eye_selection
+							eye_python=eye_selection
+						fi
+					elif [ $Index_Type = 2 ]; then
+                		echo "        Please enter the illuminant :"
+                		echo "           The possibilities are :"
+                		echo "                  A : 1"
+                		echo "                  B : 2"
+                		echo "                  D65 : 3"
+						echo "                  Name of a file to load"
+						echo "   Note:  The file needs to start from 360nm to 830nm with a step of 1"
+                		read -p "   Enter a number of name of the file : " lamp_selection
+						if [ $lamp_selection = 1 ]; then
+							lamp="A"
+						elif [ $lamp_selection = 2 ]; then
+							lamp="B"
+						elif [ $lamp_selection = 3 ]; then
+							lamp="D65"
+						else
+							lamp=lamp_selection
+						fi
+					elif [ $Index_Type = 3 ]; then
+                		echo "        Please enter the type of spectra :"
+                		echo "            Absorption via Velocity Dipole Moments : 1"
+                		read -p "   Enter a number : " num_moment
+						if [ $num_moment = 1 ]; then
+							moment="Absorption via Velocity Dipole Moments"
+							moment_python="abs_velo"
+						fi
+						
+					elif [ $Index_Type = 4 ]; then
+                		echo "        Please enter the type of spectra :"
+                		echo "           The possibilities are x, y, z, xy, xz, yz, xyz"
+                		read -p "   Enter the type : " spectra_chosen
+						
+					elif [ $Index_Type = 5 ]; then
+                		echo "        Please enter the Optical Density :"
+                		read -p "   Enter a number : " optic_dens
+
+					elif [ $Index_Type = 6 ]; then
+                		echo "        Please enter the Gaussian Width :"
+                		read -p "   Enter a number : " gauss
+					
+					elif [ $Index_Type = 10 ]; then
+						echo "Computing..."
+						python script_color.py ${input_file} ${eye_python} ${lamp} ${moment_python} ${spectra_chosen} ${optic_dens} ${gauss}
+                		rm -rf __pycache__
+						echo "The data has been same in the file color.txt and the color in the color.png in the same folder as the input file"
+					else	
+					echo ""
+							echo "#########################################################################"
+							echo ""
+							echo "                 ERROR: Please choose a valid option "
+							echo ""
+							
+							echo "       ,"
+							echo "       \\-._           /\   "
+							echo "        \\  \-..____,./  \. "
+							echo "         :\.         /    \\. "
+							echo "         :  )       :      : \ "
+							echo "          ;/        \   ;  :  :"
+							echo "          )..      .. .:.\.;  :"
+							echo "         /::...  .:::...   \ ;"
+							echo "         ; _ \    __        /:\ "
+							echo "         \:o>   /\o_>      ;:. \."
+							echo "        \-\.__ ;   __..--- /:.   \ "
+							echo "        === \_/   ;=====_.\:.     ;"
+							echo "         ,/\\--\...\--....        ;"
+							echo "              ;                    ;"
+							echo "            .\                      ;"
+							echo "          .\                        ;"
+							echo "        .\     ..     ,      .       ;"
+							echo "       :       ::..  /      ;::.     :"
+							echo "      /      \.;::.  :       ;:..    ;"
+							echo "     :         ::.   :       ;:.    ;"
+							echo "     :         ::     ;:..   :.    ;"
+							echo "      :       :;      :::....:     :"
+							echo "      /\     ,/ \      ;:::::;     ;"
+							echo "    .:. \:..:    :     ; \.--:     ;"
+							echo "   ::.  :\\  \-.,,;     ;\   ;     ;"
+							echo ".-\. _.\\      / \;      \,__:      \ "
+							echo "\---\    \----\   ;      /    \,.,,,/"
+							echo "                   \----\             "
+							echo "#########################################################################"
+							echo ""	
+					fi
+					done
+					fi
+
 		done
 
 
@@ -325,7 +595,7 @@ do
         		echo "    ============================================================="
         		echo "         GBW-file name: ${gbw_file}"
         		echo "         CIS-file name: ${cis_file}"
-			echo "         OUT-file name: ${input_file}"
+				echo "         OUT-file name: ${input_file}"
         		echo "         Grid Size: ${grid_size}x${grid_size}x${grid_size}"
         		echo "         Auto-Save of CUBE-file: ${save_cube}"
         		echo "         Cutoff in the transition decomposition: ${cutoff}"
@@ -336,20 +606,21 @@ do
         		echo "               - DCT Index: 2"
         		echo "               - Omega Index For ICS: 3"
         		echo "               - Overlapping of Transitions: 4"
-        		echo ""
-			echo "               - Only generate the orbitals: 5"
-			echo ""
+				echo "               - Only generate the orbitals: 5"
+				echo "               - Absorption / CD Spectra: 6"
+				echo "               - Molecule Color: 7"
+				echo ""
         		echo "               - Change GBW-file: 11"
         		echo "               - Change CIS-file: 12"
-			echo "               - Change OUT-file: 13"
+				echo "               - Change OUT-file: 13"
         		echo "               - Change Grid Size: 14"
         		echo "               - Auto-Save of CUBE-file: 15"
         		echo "               - Change the cutoff: 16"
-			echo "               - Name of the Tozer file: 17"
-			echo "               - Name of the Orca path: 18"
+				echo "               - Name of the Tozer file: 17"
+				echo "               - Name of the Orca path: 18"
         		echo ""
         		echo "               - Change the code: 20"
-			echo "               - Exit: 21"
+				echo "               - Exit: 21"
         		echo "    --------------------------------------------------------------"
         		read -p "    Enter a type: " Index_Type
         		echo "    =============================================================="
@@ -1124,6 +1395,291 @@ EOF
                 		echo "    =============================================================="
                 		rm mult.cube
                 		rm -rf __pycache__
+
+			elif [ $Index_Type = 6 ]; then
+			spectra_chosen="all"
+			moment="Absorption via Electric Dipole Moments"
+			moment_python="abs_elec"
+			optic_dens=1
+			lambda_min=300
+			lambda_max=900
+			num_points=500
+			format="png"
+			gauss="0.3"
+				while [[ ! ($Index_Type -eq 20) && ! ($Index_Type -eq 21)  ]]
+				do
+					echo "    ============================================================="
+					echo "                       Absorption / CD Spectra"
+					echo "    ============================================================="
+					echo "         Type of spectra : ${moment}"
+					echo "         Spectra chosen : ${spectra_chosen}"
+					echo "         Optical Density : ${optic_dens}"
+					echo "         Gaussian width : ${gauss}"
+					echo "         Minimal Wavelength (nm) : ${lambda_min}"
+					echo "         Maximal Wavelength (nm) : ${lambda_max}"
+					echo "         Number of Points : ${num_points}"
+					echo "         Format : ${format}"
+					echo "    =============================================================="
+					echo "         Change:"
+					echo ""
+					echo "               - Type of spectra: 1"
+					echo "               - Spectra chosen: 2"
+					echo "               - Optical Density: 3"
+					echo "               - Gaussian Width: 4"
+					echo "               - Minimal Wavelength: 5"
+					echo "               - Maximal Wavelength: 6"
+					echo "               - Number of Points: 7"
+					echo "               - Format: 8"
+					echo ""
+					echo "               - Plot: 10"
+					echo "               - Exit: 21"
+					echo "    --------------------------------------------------------------"
+					read -p "    Enter a type: " Index_Type
+					echo "    =============================================================="
+							
+							
+					if [ $Index_Type = 1 ]; then
+                		echo "        Please enter the type of spectra :"
+                		echo "            Absorption via Electric Dipole Moments : 1"
+                		echo "            Absorption via Velocity Dipole Moments : 2"
+                		echo "            CD via Electric Dipole Moments : 3"
+                		echo "            CD via Velocity Dipole Moments : 4"
+                		read -p "   Enter a number : " num_moment
+						if [ $num_moment = 1 ]; then
+							moment="Absorption via Electric Dipole Moments"
+							moment_python="abs_elec"
+						elif [ $num_moment = 2 ]; then
+							moment="Absorption via Velocity Dipole Moments"
+							moment_python="abs_velo"
+						elif [ $num_moment = 3 ]; then
+							moment="CD via Electric Dipole Moments"
+							moment_python="cd_elec"
+						elif [ $num_moment = 4 ]; then
+							moment="CD via Velocity Dipole Moments"
+							moment_python="cd_velo"
+						fi
+						
+					elif [ $Index_Type = 2 ]; then
+                		echo "        Please enter the type of spectra :"
+                		echo "           The possibilities are all, x, y, z, xy, xz, yz, xyz and any combination using \",\" as a separator"
+                		read -p "   Enter the type : " spectra_chosen
+						
+					elif [ $Index_Type = 3 ]; then
+                		echo "        Please enter the Optical Density :"
+                		read -p "   Enter a number : " optic_dens
+						
+
+					elif [ $Index_Type = 4 ]; then
+                		echo "        Please enter the Gaussian Width :"
+                		read -p "   Enter a number : " gauss
+						
+					elif [ $Index_Type = 5 ]; then
+                		echo "        Please enter the Minimal Wavelength :"
+                		read -p "   Enter a number : " lambda_min
+					
+					elif [ $Index_Type = 6 ]; then
+                		echo "        Please enter the Maximal Wavelength :"
+                		read -p "   Enter a number : " lambda_max
+					
+					elif [ $Index_Type = 7 ]; then
+                		echo "        Please enter the Number of points :"
+                		read -p "   Enter a number : " num_points
+					
+					elif [ $Index_Type = 8 ]; then
+                		echo "        Please enter the Format of the ouptut file (png or svg are recommended) :"
+                		read -p "   Enter the format : " format
+					
+					elif [ $Index_Type = 10 ]; then
+						python script_spectra.py ${input_file} ${moment_python} ${spectra_chosen} ${optic_dens} ${gauss} ${lambda_min} ${lambda_max} ${num_points} ${format}
+                		rm -rf __pycache__
+					else	
+					echo ""
+							echo "#########################################################################"
+							echo ""
+							echo "                 ERROR: Please choose a valid option "
+							echo ""
+							
+							echo "       ,"
+							echo "       \\-._           /\   "
+							echo "        \\  \-..____,./  \. "
+							echo "         :\.         /    \\. "
+							echo "         :  )       :      : \ "
+							echo "          ;/        \   ;  :  :"
+							echo "          )..      .. .:.\.;  :"
+							echo "         /::...  .:::...   \ ;"
+							echo "         ; _ \    __        /:\ "
+							echo "         \:o>   /\o_>      ;:. \."
+							echo "        \-\.__ ;   __..--- /:.   \ "
+							echo "        === \_/   ;=====_.\:.     ;"
+							echo "         ,/\\--\...\--....        ;"
+							echo "              ;                    ;"
+							echo "            .\                      ;"
+							echo "          .\                        ;"
+							echo "        .\     ..     ,      .       ;"
+							echo "       :       ::..  /      ;::.     :"
+							echo "      /      \.;::.  :       ;:..    ;"
+							echo "     :         ::.   :       ;:.    ;"
+							echo "     :         ::     ;:..   :.    ;"
+							echo "      :       :;      :::....:     :"
+							echo "      /\     ,/ \      ;:::::;     ;"
+							echo "    .:. \:..:    :     ; \.--:     ;"
+							echo "   ::.  :\\  \-.,,;     ;\   ;     ;"
+							echo ".-\. _.\\      / \;      \,__:      \ "
+							echo "\---\    \----\   ;      /    \,.,,,/"
+							echo "                   \----\             "
+							echo "#########################################################################"
+							echo ""	
+					fi
+					done
+					elif [ $Index_Type = 7 ]; then
+			eye="CIE 1964 10°"
+			eye_python="10deg"
+			lamp="D65"
+			spectra_chosen="xyz"
+			moment="Absorption via Electric Dipole Moments"
+			moment_python="abs_elec"
+			optic_dens=1
+			gauss="0.3"
+				while [[ ! ($Index_Type -eq 20) && ! ($Index_Type -eq 21)  ]]
+				do
+					echo "    ============================================================="
+					echo "                       Color computation"
+					echo "    ============================================================="
+					echo "         Observer : ${eye}"
+					echo "         Illuminant : ${lamp}"
+					echo "         Type of spectra : ${moment}"
+					echo "         Spectra chosen : ${spectra_chosen}"
+					echo "         Optical Density : ${optic_dens}"
+					echo "         Gaussian width : ${gauss}"
+					echo "    =============================================================="
+					echo "         Change:"
+					echo ""
+					echo "               - Observer: 1"
+					echo "               - Illuminant: 2"
+					echo "               - Type of spectra: 3"
+					echo "               - Spectra chosen: 4"
+					echo "               - Optical Density: 5"
+					echo "               - Gaussian Width: 6"
+					echo ""
+					echo "               - Plot: 10"
+					echo "               - Exit: 21"
+					echo "    --------------------------------------------------------------"
+					read -p "    Enter a type: " Index_Type
+					echo "    =============================================================="
+							
+					
+					if [ $Index_Type = 1 ]; then
+                		echo "        Please enter the observer :"
+                		echo "           The possibilities are :"
+                		echo "                  CIE 1931 2° : 1"
+                		echo "                  CIE 1964 10° : 2"
+                		echo "                  Name of a file to load"
+						echo "   Note:  The file needs to start from 360nm to 830nm with a step of 1"
+                		read -p "   Enter a number of name of the file : " eye_selection
+						if [ $eye_selection = 1 ]; then
+							eye="CIE 1931 2°"
+							eye_python="2deg"
+						elif [ $eye_selection = 2 ]; then
+							eye="CIE 1964 10°"
+							eye_python="10deg"
+						else
+							eye=eye_selection
+							eye_python=eye_selection
+						fi
+					elif [ $Index_Type = 2 ]; then
+                		echo "        Please enter the illuminant :"
+                		echo "           The possibilities are :"
+                		echo "                  A : 1"
+                		echo "                  B : 2"
+                		echo "                  D65 : 3"
+						echo "                  Name of a file to load"
+						echo "   Note:  The file needs to start from 360nm to 830nm with a step of 1"
+                		read -p "   Enter a number of name of the file : " lamp_selection
+						if [ $lamp_selection = 1 ]; then
+							lamp="A"
+						elif [ $lamp_selection = 2 ]; then
+							lamp="B"
+						elif [ $lamp_selection = 3 ]; then
+							lamp="D65"
+						else
+							lamp=lamp_selection
+						fi
+					elif [ $Index_Type = 3 ]; then
+                		echo "        Please enter the type of spectra :"
+                		echo "            Absorption via Electric Dipole Moments : 1"
+                		echo "            Absorption via Velocity Dipole Moments : 2"
+                		read -p "   Enter a number : " num_moment
+						if [ $num_moment = 1 ]; then
+							moment="Absorption via Electric Dipole Moments"
+							moment_python="abs_elec"
+						elif [ $num_moment = 2 ]; then
+							moment="Absorption via Velocity Dipole Moments"
+							moment_python="abs_velo"
+						elif [ $num_moment = 3 ]; then
+							moment="CD via Electric Dipole Moments"
+							moment_python="cd_elec"
+						elif [ $num_moment = 4 ]; then
+							moment="CD via Velocity Dipole Moments"
+							moment_python="cd_velo"
+						fi
+						
+					elif [ $Index_Type = 4 ]; then
+                		echo "        Please enter the type of spectra :"
+                		echo "           The possibilities are x, y, z, xy, xz, yz, xyz"
+                		read -p "   Enter the type : " spectra_chosen
+						
+					elif [ $Index_Type = 5 ]; then
+                		echo "        Please enter the Optical Density :"
+                		read -p "   Enter a number : " optic_dens
+
+					elif [ $Index_Type = 6 ]; then
+                		echo "        Please enter the Gaussian Width :"
+                		read -p "   Enter a number : " gauss
+					
+					elif [ $Index_Type = 10 ]; then
+						echo "Computing..."
+						python script_color.py ${input_file} ${eye_python} ${lamp} ${moment_python} ${spectra_chosen} ${optic_dens} ${gauss}
+                		rm -rf __pycache__
+						echo "The data has been same in the file color.txt and the color in the color.png in the same folder as the input file"
+					else	
+					echo ""
+							echo "#########################################################################"
+							echo ""
+							echo "                 ERROR: Please choose a valid option "
+							echo ""
+							
+							echo "       ,"
+							echo "       \\-._           /\   "
+							echo "        \\  \-..____,./  \. "
+							echo "         :\.         /    \\. "
+							echo "         :  )       :      : \ "
+							echo "          ;/        \   ;  :  :"
+							echo "          )..      .. .:.\.;  :"
+							echo "         /::...  .:::...   \ ;"
+							echo "         ; _ \    __        /:\ "
+							echo "         \:o>   /\o_>      ;:. \."
+							echo "        \-\.__ ;   __..--- /:.   \ "
+							echo "        === \_/   ;=====_.\:.     ;"
+							echo "         ,/\\--\...\--....        ;"
+							echo "              ;                    ;"
+							echo "            .\                      ;"
+							echo "          .\                        ;"
+							echo "        .\     ..     ,      .       ;"
+							echo "       :       ::..  /      ;::.     :"
+							echo "      /      \.;::.  :       ;:..    ;"
+							echo "     :         ::.   :       ;:.    ;"
+							echo "     :         ::     ;:..   :.    ;"
+							echo "      :       :;      :::....:     :"
+							echo "      /\     ,/ \      ;:::::;     ;"
+							echo "    .:. \:..:    :     ; \.--:     ;"
+							echo "   ::.  :\\  \-.,,;     ;\   ;     ;"
+							echo ".-\. _.\\      / \;      \,__:      \ "
+							echo "\---\    \----\   ;      /    \,.,,,/"
+							echo "                   \----\             "
+							echo "#########################################################################"
+							echo ""	
+					fi
+					done
         		fi
 		done
 	fi	
