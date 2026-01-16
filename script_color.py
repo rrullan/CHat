@@ -12,15 +12,15 @@ from script_spectra import *
 
 #Dicts for eye and luminants
 eye = {
-    "2deg" : "data_color/CIE_1931_2deg.txt",
-    "10deg" : "data_color/CIE_1964_10deg.txt"
+    "2deg" : "CIE_1931_2deg.txt",
+    "10deg" : "CIE_1964_10deg.txt"
 }
 
 
 lum = {
     "A" : "A",
-    "B" : "data_color/lum_C.txt",
-    "D65" : "data_color/lum_D65.txt"
+    "B" : "lum_C.txt",
+    "D65" : "lum_D65.txt"
 }
 
 
