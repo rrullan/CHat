@@ -521,7 +521,7 @@ do
 						echo "Computing..."
 						python script_color.py ${input_file} ${eye_python} ${lamp} ${moment_python} ${spectra_chosen} ${optic_dens} ${gauss}
                 		rm -rf __pycache__
-						echo "The data has been same in the file color.txt and the color in the color.png in the same folder as the input file"
+						echo "The data has been stored in the file color.txt and the color in the color.png in the same folder as the input file"
 					else	
 					echo ""
 							echo "#########################################################################"

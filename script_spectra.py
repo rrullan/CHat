@@ -176,7 +176,7 @@ def oscillator_force(transition_energy, moments):
 
     return fosc
 
-def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max=900, n_points=500, gauss=0.3, plot=False, show=False, file="",spectra="all",fmt="png"):
+def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max=900, n_points=500, gauss=0.3, save=True, plot=False, show=False, file="",spectra="all",fmt="png"):
     """
     Computes the spectra
     The gauss factor provided is the enlargement of the peaks using gaussian fitting.
@@ -226,11 +226,22 @@ def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max
     spectra_yz = spectra_yz / norm*DO
     spectra_xyz = spectra_xyz / norm*DO
 
+    if file != "":
+
+        dirr = file.split("/")[:-1]
+        dirr = "".join(dirr)
+        file_name = (file.split("/")[-1]).split(".")[0]
+    else:
+        dirr = "."
+        file_name = "give_color."
+
+
     #x y z xy xz yz xyz
     Choice_spectra = np.zeros(7)
 
     if spectra == "all":
         Choice_spectra = np.ones(7)
+        print_spectra = "x, y, z, xy, xz, yz, xyz"
     elif type(spectra) is str:
         if spectra == "x":
             Choice_spectra[0] = 1
@@ -246,22 +257,36 @@ def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max
             Choice_spectra[5] = 1
         if spectra == "xyz":
             Choice_spectra[6] = 1
+        print_spectra = spectra
     else:
+        print_spectra = ""
         if "x" in spectra:
             Choice_spectra[0] = 1
+            print_spectra += "x, "
         if "y" in spectra:
             Choice_spectra[1] = 1
+            print_spectra += "y, "
         if "z" in spectra:
             Choice_spectra[2] = 1
+            print_spectra += "z, "
         if "xy" in spectra:
             Choice_spectra[3] = 1
+            print_spectra += "xy, "
         if "xz" in spectra:
             Choice_spectra[4] = 1
+            print_spectra += "xz, "
         if "yz" in spectra:
             Choice_spectra[5] = 1
+            print_spectra += "yz, "
         if "xyz" in spectra:
             Choice_spectra[6] = 1
-
+            print_spectra += "xyz, "
+        print_spectra = print_spectra[:-2]
+    if save:
+        spectra_all = np.array([spectra_x,spectra_y,spectra_z,spectra_xy,spectra_xz,spectra_yz,spectra_xyz])
+        array_to_save = np.append(lambda_list.reshape((1,len(lambda_list))),spectra_all[Choice_spectra.astype("bool")],axis=0)
+        # print(np.shape(array_to_save))
+        np.savetxt(dirr+ "/" + file_name + "_spectra_data.txt",array_to_save.transpose(),header="Wavelength (nm) Absorption value for {}".format(print_spectra),fmt="%3.4f")
 
     if plot:
         import matplotlib.pyplot as plt
@@ -291,9 +316,7 @@ def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max
         if show:
             plt.show()
         else:
-            dirr = file.split("/")[:-1]
-            dirr = "".join(dirr)
-            plt.savefig(dirr + "spectra." + fmt)
+            plt.savefig(dirr + "/" + file_name + "_spectra." + fmt)
 
     return lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz
 
@@ -306,6 +329,7 @@ if __name__ == "__main__":
     # fosc = oscillator_force(transition_energy, D)
     # compute_spectra(transition_energy, abs_elec, plot=True,spectra="all",show=True)
     # compute_spectra(transition_energy, D, plot=True,)
+
     file = sys.argv[1]
     type_spectra = sys.argv[2]
     chosen_spectra = sys.argv[3]
@@ -315,6 +339,16 @@ if __name__ == "__main__":
     max_lambda = float(sys.argv[7])
     num_points = int(sys.argv[8])
     fmt = sys.argv[9]
+
+    # file = "Demo/Fcenter_TDA_PBE_TZVP.out"
+    # type_spectra="abs_elec"
+    # chosen_spectra="xyz"
+    # OD = 1
+    # gauss = 0.3
+    # min_lambda=300
+    # max_lambda=900
+    # num_points= 601
+    # fmt = "png"
 
     center_of_mass, state_transition, transition_energy, abs_elec, abs_velo, cd_elec, cd_velo = extract_absorption_spectra(file)
 

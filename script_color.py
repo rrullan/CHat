@@ -55,7 +55,7 @@ def illuminant_D65():
     Returns the spectrum of illuminant D65
     """
 
-    lambda_list, spectrum = np.loadtxt("lum_D65.txt",unpack=True)
+    lambda_list, spectrum = np.loadtxt("data_color/lum_D65.txt",unpack=True)
     return lambda_list, spectrum
 
 def illuminant_C():
@@ -63,49 +63,18 @@ def illuminant_C():
     Returns the spectrum of illuminant C
     """
 
-    lambda_list, spectrum = np.loadtxt("lum_C.txt",unpack=True)
+    lambda_list, spectrum = np.loadtxt("data_color/lum_C.txt",unpack=True)
     return lambda_list, spectrum
 
 
-def trichromatic_coordinates(file,eye,lamp,moment="D",spectrum="xyz",lambda_min=300,lambda_max=800,n_points=501):
-    """
-    Calculate the trichromatic coordinates
-    """
-    center_of_mass, state_transition, transition_energy, D, P, M = extract_absorption_spectra_orca("Demo/Fcenter_TDA_PBE_TZVP.out")
-    if moment == "D":
-        lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, D, lambda_min=lambda_min, lambda_max=lambda_max, n_points=n_points)
-    if moment == "P":
-        lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, P, lambda_min=lambda_min, lambda_max=lambda_max, n_points=n_points)
-    if moment == "M":
-        lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, M, lambda_min=lambda_min, lambda_max=lambda_max, n_points=n_points)
-
-    if spectrum == "x": chosen_spectrum = spectra_x
-    if spectrum == "y": chosen_spectrum = spectra_z
-    if spectrum == "z": chosen_spectrum = spectra_y
-    if spectrum == "xy": chosen_spectrum = spectra_xy
-    if spectra == "xz": chosen_spectrum = spectra_xz
-    if spectrum == "yz": chosen_spectrum = spectra_yz
-    if spectrum == "xyz": chosen_spectrum = spectra_xyz
-
-    K = 1/np.sum(lamp * eye[1])
-    X = K * np.sum(lamp * eye[0] * chosen_spectrum)
-    Y = K * np.sum(lamp * eye[1] * chosen_spectrum)
-    Z = K * np.sum(lamp * eye[2] * chosen_spectrum)
-
-    x = X / (X+Y+Z)
-    y = Y / (X+Y+Z)
-    z = 1 - x - y
-
-    return x,y,z
-
-def convert_spectrum_to_XYZ(spectrum,lamp,eye,norm=False):
+def convert_spectrum_to_XYZ(spectrum,lamp,obs,norm=False):
     """
     Convert a spectrum to the XYZ color space
     """
-    K = 1/np.sum(lamp * eye[2])
-    X = K * np.sum(lamp * eye[1] * spectrum)
-    Y = K * np.sum(lamp * eye[2] * spectrum)
-    Z = K * np.sum(lamp * eye[3] * spectrum)
+    K = 1/np.sum(lamp * obs[2])
+    X = K * np.sum(lamp * obs[1] * spectrum)
+    Y = K * np.sum(lamp * obs[2] * spectrum)
+    Z = K * np.sum(lamp * obs[3] * spectrum)
     if norm:
         X = X * 100/Y
         Z = Z * 100/Y
@@ -113,14 +82,14 @@ def convert_spectrum_to_XYZ(spectrum,lamp,eye,norm=False):
     return X,Y,Z
 
 
-def cieluv_perf_diff(eye,lamp):
+def cieluv_perf_diff(obs,lamp):
     """
     Computes the luv coefficient for a perfect reflecting diffuser
     This is used to compute the cieluv in other cases
     See cieluv for references
     """
 
-    X,Y,Z = convert_spectrum_to_XYZ(lamp,1,eye,norm=True)
+    X,Y,Z = convert_spectrum_to_XYZ(lamp,1,obs,norm=True)
 
     Yn = 100
     L = 116 * Y/Yn ** (1/3) - 16
@@ -133,7 +102,7 @@ def cieluv_perf_diff(eye,lamp):
 
 
 
-def cieluv(X,Y,Z,eye,lamp):
+def cieluv(X,Y,Z,obs,lamp):
     """
     Compute in the CIELUV color space
     https://en.wikipedia.org/wiki/CIELUV
@@ -146,7 +115,7 @@ def cieluv(X,Y,Z,eye,lamp):
     up = 4*X / (X+15*Y+3*Z)
     vp = 9*Y / (X+15*Y+3*Z)
 
-    upn,vpn = cieluv_perf_diff(eye,lamp)
+    upn,vpn = cieluv_perf_diff(obs,lamp)
 
     us = 13*L * (up - upn)
     vs = 13*L * (vp - vpn)
@@ -157,7 +126,7 @@ def cieluv(X,Y,Z,eye,lamp):
     return L,us,vs,C,h
 
 
-def cielab(X,Y,Z,eye,lamp):
+def cielab(X,Y,Z,obs,lamp):
     """
     compute in the CIELAB color space
     https://en.wikipedia.org/wiki/CIELAB_color_space
@@ -170,7 +139,7 @@ def cielab(X,Y,Z,eye,lamp):
             return t**(1/3)
         return 1/3 * t /d**2  + 4/29
 
-    Xn,Yn,Zn = convert_spectrum_to_XYZ(lamp,1,eye,norm=True)
+    Xn,Yn,Zn = convert_spectrum_to_XYZ(lamp,1,obs,norm=True)
 
     L = 116 * f(Y/Yn) - 16
     a = 500 * (f(X/Xn) - f(Y/Yn))
@@ -188,7 +157,7 @@ def srgb(X,Y,Z):
 
     def transfer_function(color):
         if color <= 0.0031308: return color*12.92
-        return (color*1.055)**(1/2.4) - 0.055
+        return 1.055*(color)**(1/2.4) - 0.055
 
     X = X/100
     Y = Y/100
@@ -215,19 +184,19 @@ def srgb(X,Y,Z):
     return R,G,B
 
 
-def compute_all_colors(file,eye,lamp,spectrum,print_data=True,save_data=True,save_color=True):
+def compute_all_colors(file,obs,lamp,spectrum,print_data=True,save_data=True,save_color=True):
     """
     Computes and prints the color of a spectrum in all available spaces
     """
 
-    X,Y,Z = convert_spectrum_to_XYZ(spectrum,lamp,eye)
+    X,Y,Z = convert_spectrum_to_XYZ(spectrum,lamp,obs)
 
     x = X / (X+Y+Z)
     y = Y / (X+Y+Z)
     z = 1 - x - y
 
-    L_uv,us,vs,C_uv,h_uv = cieluv(X,Y,Z,eye,lamp)
-    L_ab,a,b,C_ab,h_ab = cielab(X,Y,Z,eye,lamp)
+    L_uv,us,vs,C_uv,h_uv = cieluv(X,Y,Z,obs,lamp)
+    L_ab,a,b,C_ab,h_ab = cielab(X,Y,Z,obs,lamp)
     R,G,B = srgb(X,Y,Z)
 
     if print_data:
@@ -242,9 +211,12 @@ def compute_all_colors(file,eye,lamp,spectrum,print_data=True,save_data=True,sav
 
     folder = file.split("/")[:-1]
     dirr = "".join(folder)
+    if dirr == "":
+        dirr = "."
+    file_name = (file.split("/")[-1]).split(".")[0]
 
     if save_data:
-        with open(dirr+"/color.txt","w") as f:
+        with open(dirr + "/" + file_name + "_color.txt","w") as f:
 
             f.write('Colors in the spaces :\n')
             f.write('XYZ : X = {:<10.4f} Y = {:^10.4f} Z = {:>10.4f}\n'.format(X,Y,Z))
@@ -256,7 +228,7 @@ def compute_all_colors(file,eye,lamp,spectrum,print_data=True,save_data=True,sav
     if save_color:
         import matplotlib.image as mpimg
         image = np.zeros((500,500,3)) + np.array([R/255,G/255,B/255])
-        mpimg.imsave(dirr + "/color.png",image)
+        mpimg.imsave(dirr + "/" + file_name +  "_color.png",image)
 
 
 
@@ -330,12 +302,15 @@ def compute_all_colors_from_file(file,moment="abs_elec",spectrum="xyz",eye_dict=
 
 
 if __name__ == "__main__":
-    # eye = read_txt("CIE_1964_10deg.txt")
-    # eye = read_txt("CIE_1931_2deg.txt")
+    # obs = read_txt("data_color/CIE_1964_10deg.txt")
+    # obs = read_txt("tangui_eye.txt")
+    # obs = read_txt("data_color/CIE_1931_2deg.txt")
 
     # lambda_list, spectrum = illuminant_D65()
-    # lambda_list = lambda_list[60:]
-    # lamp = spectrum[60:]
+    # lambda_list = lambda_list[80:-50]
+    # lamp = spectrum[80:-50]
+    # print(lambda_list)
+    # lambda_list,lamp = read_txt("tangui_d65.txt")
 
     # lambda_list = np.linspace(360,830,471)
     # lamp = illuminant_A(lambda_list)
@@ -352,14 +327,13 @@ if __name__ == "__main__":
     # transition_energy, MX, MY, MZ, gauss = np.loadtxt("electric_dipole_CAMB3LYP.txt",unpack=True)
     # transition_energy = transition_energy * 8065.54
     # Moments = np.array([MX,MY,MZ]).transpose()
-    #
+    # #
     # E,A,B = np.loadtxt("electric_dipole_CAMB3LYP_XYZ.txt",unpack=True)
-    #
-    # lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, Moments, lambda_min=360, lambda_max=830, n_points=471,gauss=0.3)
+    # #
+    # lambda_list, spectra_x, spectra_y, spectra_z, spectra_xy, spectra_xz, spectra_yz, spectra_xyz = compute_spectra(transition_energy, Moments, lambda_min=380, lambda_max=780, n_points=401,gauss=0.3,save=False)
     # spectrum = 100 * 10**(-spectra_xyz)
-    # compute_all_colors(eye,lamp,spectrum,print_data=True)
-
-    # trichromatic_coordinates(,eye,lamp)
+    # compute_all_colors("electric_dipole_CAMB3LYP.txt",obs,lamp,spectrum,print_data=True)
+    #
     # import matplotlib.pyplot as plt
     # plt.plot(lambda_list,spectra_xyz,"o-r",label="CHat")
     # plt.plot(E,B,"o-b",label="spectre.c")
