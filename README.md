@@ -29,5 +29,6 @@ This code is under the license: European Union Public License 1.2.
 ## Contact
 
 Email : [rrulan](mailto:raphael.rullan@ens-lyon.fr)
+
 		[Rg](mailto:remi.grincourt@ens-lyon.fr)
 
