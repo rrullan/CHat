@@ -276,7 +276,7 @@ def compute_all_colors_from_file(file,moment="abs_elec",spectrum="xyz",eye_dict=
 
 
     if lamp_dict == "A":
-        lamp = illuminant_A(eye[0])
+        lamp = illuminant_A(eye_chosen[0])
     elif lamp_dict == "C":
         lum_lambda_list, lamp = read_txt(lum[lamp_dict])
         lambda_list = lum_lambda_list[12:]
