@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-This script contains the function used to compute the color using an output file
+This script contains the function used to compute the color using an output file.
+The script was written by Rémi Grincourt (M2 Student) based on a script of
+Prof. Tangui Le Bahers
 """
 
 import numpy as np
@@ -12,15 +14,15 @@ from script_spectra import *
 
 #Dicts for eye and luminants
 eye = {
-    "2deg" : "CIE_1931_2deg.txt",
-    "10deg" : "CIE_1964_10deg.txt"
+    "2deg" : "data_color/CIE_1931_2deg.txt",
+    "10deg" : "data_color/CIE_1964_10deg.txt"
 }
 
 
 lum = {
     "A" : "A",
-    "B" : "lum_C.txt",
-    "D65" : "lum_D65.txt"
+    "C" : "data_color/lum_C.txt",
+    "D65" : "data_color/lum_D65.txt"
 }
 
 

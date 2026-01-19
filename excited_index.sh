@@ -46,11 +46,14 @@ echo " This software has been written by Antonin Dufour (M2 Student) and Raphael
 echo " under the supervision of Pr. Tangui le Bahers and Dr. Stephan Steinmann of the LCH ENS de Lyon.  "
 echo " The objective of this software is to compute different indexes (Tozer, DCT ...) to analyse the   "
 echo " electronic transitions either in periodic systems (CP2K software) or in non-periodic (Orca) ones."
+echo " The spectra and color computations were written by Rémi Grincourt (M2 Student), based on a script"
+echo " written by Pr. Tangui le Bahers"
 echo ""
 echo "The python script uses the Cube-Toolz package: https://github.com/funkymunkycool/Cube-Toolz for"
 echo "cube manipulations."
 echo "The implementation of the Tozer index is based on the paper J. Chem. Phys. 128, 044118 (2008)."
 echo "The implementation of the DCT index is based on the paper J. Chem. Theory Comput. 2011, 7, 8, 2498–2506"
+
 echo ""
 echo 'Miaou !'
 

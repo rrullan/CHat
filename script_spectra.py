@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-This script contains the function used to compute and plot spectral data
+This script contains the functions used to compute and plot spectral data.
+The script was written by Rémi Grincourt (M2 Student) based on a script of
+Prof. Tangui Le Bahers
 """
 
 import numpy as np
@@ -226,14 +228,13 @@ def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max
     spectra_yz = spectra_yz / norm*DO
     spectra_xyz = spectra_xyz / norm*DO
 
-    if file != "":
 
-        dirr = file.split("/")[:-1]
-        dirr = "".join(dirr)
-        file_name = (file.split("/")[-1]).split(".")[0]
-    else:
+    folder = file.split("/")[:-1]
+    dirr = "".join(folder)
+    if dirr == "":
         dirr = "."
-        file_name = "give_color."
+    file_name = (file.split("/")[-1]).split(".")[0]
+
 
 
     #x y z xy xz yz xyz
