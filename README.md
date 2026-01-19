@@ -30,5 +30,5 @@ This code is under the license: European Union Public License 1.2.
 
 Email : [rrulan](mailto:raphael.rullan@ens-lyon.fr)
 
-		[Rg](mailto:remi.grincourt@ens-lyon.fr)
+Email : [Rg](mailto:remi.grincourt@ens-lyon.fr)
 
