@@ -136,19 +136,104 @@ def extract_absorption_spectra_orca(file):
 
 
 
+
+def extract_absorption_spectra_gaussian(file):
+    """
+    extract_absorption_spectra_gaussian(file)
+
+    Extract the Absorption spectra from a gaussian output
+    """
+
+    flag_edm = 0
+    flag_vdm = 0
+    flag_mdm = 0
+    flag_excs = 0
+    transition_energy = []
+    state_transition = []
+    for line in codecs.open(file, 'r',encoding="utf-8"):
+        if "Ground to excited state" in line:
+            flag_edm = 0
+            flag_vdm = 0
+            flag_mdm = 0
+
+        if "electric dipole moment" in line:
+            dipole = []
+            flag_edm = 2
+
+        elif "velocity dipole moment" in line:
+            dipole = []
+            flag_vdm = 2
+
+        elif "magnetic dipole moment" in line:
+            dipole = []
+            flag_mdm = 2
+
+        elif flag_edm:
+            if flag_edm == 2:
+                flag_edm = 1
+                dm_edm = []
+                state_transition = []
+            else:
+                lsplit = line.split()
+                dm_edm.append([float(lsplit[1]),float(lsplit[2]),float(lsplit[3])])
+                state_transition.append(int(lsplit[0]))
+
+        elif flag_vdm:
+            if flag_vdm == 2:
+                flag_vdm = 1
+                dm_vdm = []
+            else:
+                lsplit = line.split()
+                dm_vdm.append([float(lsplit[1]),float(lsplit[2]),float(lsplit[3])])
+
+        elif flag_mdm:
+            if flag_mdm == 2:
+                flag_mdm = 1
+                dm_mdm = []
+            else:
+                lsplit = line.split()
+                dm_mdm.append([float(lsplit[1]),float(lsplit[2]),float(lsplit[3])])
+
+        if "Excited State  " in line: transition_energy.append(float(line.split()[4]))
+
+    transition_energy = np.array(transition_energy[-len(state_transition):])
+    state_transition = np.array(state_transition)
+    dm_edm = np.array(dm_edm)
+    dm_vdm = np.array(dm_vdm)
+    dm_mdm = np.array(dm_mdm)
+
+    return transition_energy, state_transition, dm_edm, dm_vdm, dm_mdm
+
+
+
+
+
 def extract_absorption_spectra(file):
     """
     Extract data from an orca or a cp2k file
     """
 
     orca_file = 0
+    gaussian_file = 0
     count = 0
     for line in open(file):
         count+=1
+        if "Gaussian" in line:
+            gaussian_file = 1
+            break
+
         if count==3:
             if  "O   R   C   A" in line: orca_file = 1
             break
+
     if orca_file: center_of_mass, state_transition, transition_energy, abs_elec, abs_velo, cd_elec, cd_velo = extract_absorption_spectra_orca(file)
+
+    elif gaussian_file:
+        transition_energy, state_transition, abs_elec, abs_velo, abs_mag = extract_absorption_spectra_gaussian(file)
+        center_of_mass = np.array([0,0,0])
+        cd_elec = None
+        cd_velo = None
+
     else:
         state_transition, transition_energy, abs_velo = extract_absorption_spectra_cp2k(file)
         center_of_mass = np.array([0,0,0])
@@ -177,6 +262,8 @@ def oscillator_force(transition_energy, moments):
         fosc[fosc_i] = [fosc_i_x, fosc_i_y, fosc_i_z, fosc_i_x + fosc_i_y + fosc_i_z]
 
     return fosc
+
+
 
 def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max=900, n_points=500, gauss=0.3, save=True, plot=False, show=False, file="",spectra="all",fmt="png"):
     """

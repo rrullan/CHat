@@ -316,6 +316,8 @@ class CubeOrca():
         nelectron = vol * edensity
         return nelectron
 
+
+
 #-----------------------------------------------------------------------------#
 # Fonctions communes fusionnées : CP2K et Orca
 def diff_cubes(files, name):
@@ -388,6 +390,22 @@ def barycentre(file):
     b[2] = (b[2] / d)
     print(f'Barycentre position: {b} Angstrom')
     return b
+    
+def barycentre_from_data(data):
+    d = 0
+    b = [0, 0, 0]
+    for i in range(len(data[:, 0, 0])):
+        for j in range(len(data[0, :, 0])):
+            for k in range(len(data[0, 0, :])):
+                d += data[i, j, k]
+                b[0] += data[i, j, k] * i
+                b[1] += data[i, j, k] * j
+                b[2] += data[i, j, k] * k
+    b[0] = (b[0] / d)
+    b[1] = (b[1] / d)
+    b[2] = (b[2] / d)
+    print(f'Barycentre position: {b} Angstrom')
+    return b
 
 def rcubes(files):
     cubes = [CubeCP2K(fin) for fin in files]
@@ -409,7 +427,108 @@ def cube_integrate_OM(file):
     cube = CubeOrca(file)
     return cube.cube_OM_int()
 
-def main_dct(input_file, initial_state, final_state, bohr):
+def read_transition_cp2k(input_file):
+    """
+    Reads the excitation analysis from a cp2k file
+    """
+    flag_exc_an = 0
+    for line in open(input_file,"r"):
+        if "Excitation analysis" in line:
+            flag_exc_an = 5
+            transition = []
+            transition_add = False
+            count_state = 0
+        elif flag_exc_an:
+            if flag_exc_an > 1:
+                flag_exc_an -= 1
+            elif "---------" in line:
+                flag_exc_an = 0
+            else:
+                lsplit = line.split()
+                if int(lsplit[0]) == count_state + 1:
+                    count_state += 1
+                    if transition_add: transition.append(transition_add)
+                    transition_add = []
+                else:
+                    transition_add.append([int(lsplit[0]),int(lsplit[1]),float(lsplit[2])])
+                    
+    return transition
+
+    
+    
+def main_dct_cp2k(input_file, initial_state, final_state, bohr):
+    transition = read_transition_cp2k(input_file)
+    
+    input_file_s = input_file.split(".")[0]
+    
+    if initial_state == 0:
+        transi_init = 0
+    else:
+        transi_init = transition[initial_state - 1]
+        c = CubeCP2K()
+        c.read_cube("{}-WFN_{:05d}_1-1_0.cube".format(input_file_s, transi_init[0][0]))
+        Nx,Ny,Nz = c.NX, c.NY, c.NZ
+        cube_init = np.zeros((Nx,Ny,Nz))
+        
+        for occ, virt, ampl in transi_init:
+            cube_occ = "{}-WFN_{:05d}_1-1_0.cube".format(input_file_s, occ)
+            cube_virt = "{}-WFN_{:05d}_1-1_0.cube".format(input_file_s, virt)
+            cube_occ_c = CubeCP2K()
+            cube_occ_c.read_cube(cube_occ)
+            cube_occ = cube_occ_c.data
+            cube_virt_c = CubeCP2K()
+            cube_virt_c.read_cube(cube_virt)
+            cube_virt = cube_virt_c.data
+            
+            cube_init = cube_init + (cube_occ**2 - cube_virt**2) * ampl**2
+    
+    transi_final = transition[final_state - 1]
+
+    c = CubeCP2K()
+    c.read_cube("{}-WFN_{:05d}_1-1_0.cube".format(input_file_s, transi_final[0][0]))
+    Nx,Ny,Nz = c.NX, c.NY, c.NZ
+    cube_fin = np.zeros((Nx,Ny,Nz))
+    
+    for occ, virt, ampl in transi_final:
+        cube_occ = "{}-WFN_{:05d}_1-1_0.cube".format(input_file_s, occ)
+        cube_virt = "{}-WFN_{:05d}_1-1_0.cube".format(input_file_s, virt)
+        cube_occ_c = CubeCP2K()
+        cube_occ_c.read_cube(cube_occ)
+        cube_occ = cube_occ_c.data
+        cube_virt_c = CubeCP2K()
+        cube_virt_c.read_cube(cube_virt)
+        cube_virt = cube_virt_c.data
+        
+        cube_fin = cube_fin + (cube_occ**2 - cube_virt**2) * ampl**2
+    
+    if transi_init:
+        cube_diff = (cube_fin - cube_init)
+    
+    else: cube_diff = cube_fin
+    
+    cube_pos = abs(cube_diff)
+    cube_negative = cube_diff - cube_pos
+    bary_plus = barycentre_from_data(cube_pos)
+    bary_moins = barycentre_from_data(cube_negative)
+    
+    Dct = distance(bary_plus, bary_moins) * bohr
+    c = CubeCP2K()
+    c.read_cube("{}-WFN_{:05d}_1-1_0.cube".format(input_file_s, occ))
+    c.data = cube_pos
+    qct = c.cube_int() 
+    muct = Dct*qct
+
+    print("")
+    print("========================================")
+    print("")
+    print(" Le Bahers Index : {} Aangstroem".format(Dct))
+    print("")
+    print("========================================")
+    return [Dct , qct , muct, bary_plus, bary_moins]
+
+
+
+def main_dct_orca(input_file, initial_state, final_state, bohr):
     if initial_state != 0 and initial_state < 10 and final_state < 10:
         diff_cubes(["{}.cisdp0{}.cube".format(input_file, final_state), "{}.cisdp0{}.cube".format(input_file, initial_state)], 'diff.cube')
     elif initial_state != 0 and initial_state < 10 and final_state >= 10:
@@ -432,6 +551,8 @@ def main_dct(input_file, initial_state, final_state, bohr):
     print("")
     print("========================================")
     return [Dct , qct , muct, bary_plus, bary_moins]
+    
+    
    
 def main_double_overlap(input_file, initial_state, final_state, bohr):
     print("Work in Progress")
@@ -917,6 +1038,7 @@ if __name__ == '__main__':
     index = sys.argv[1]
     if index not in ['tozer', 'dct', 'omega_soc', 'double_overlap', 'double_overlap_cube']:
         sys.exit()
+        
     elif index=='tozer':
         name = sys.argv[2]
         cutoff = sys.argv[3]
@@ -930,19 +1052,26 @@ if __name__ == '__main__':
         input_file = sys.argv[2]
         initial_state = int(sys.argv[3])
         final_state = int(sys.argv[4])
-        dct_list = main_dct(input_file, initial_state, final_state, bohr)
+        if code == 'CP2K':     
+            dct_list = main_dct_cp2k(input_file, orb_file, initial_state, final_state, bohr)
+        else:
+            dct_list = main_dct_orca(input_file, initial_state, final_state, bohr)
         output_print_Dct(dct_list)
+        
+        
     elif index=='omega_soc':
         input_file = sys.argv[2]
         cutoff = sys.argv[3]
         initial_state = int(sys.argv[4])
         final_state = int(sys.argv[5])
         omega = main_omega_soc(input_file, cutoff, initial_state, final_state)
+        
     elif index=="double_overlap":
         input_file = sys.argv[2]
         initial_state = int(sys.argv[3])
         final_state = int(sys.argv[4])
         main_double_overlap(input_file, initial_state, final_state, bohr)
+        
     elif index=="double_overlap_cube":
         initial_state = sys.argv[2]
         final_state = sys.argv[3]
