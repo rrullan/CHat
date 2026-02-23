@@ -46,14 +46,11 @@ echo " This software has been written by Antonin Dufour (M2 Student) and Raphael
 echo " under the supervision of Pr. Tangui le Bahers and Dr. Stephan Steinmann of the LCH ENS de Lyon.  "
 echo " The objective of this software is to compute different indexes (Tozer, DCT ...) to analyse the   "
 echo " electronic transitions either in periodic systems (CP2K software) or in non-periodic (Orca) ones."
-echo " The spectra and color computations were written by Rémi Grincourt (M2 Student), based on a script"
-echo " written by Pr. Tangui le Bahers"
 echo ""
 echo "The python script uses the Cube-Toolz package: https://github.com/funkymunkycool/Cube-Toolz for"
 echo "cube manipulations."
 echo "The implementation of the Tozer index is based on the paper J. Chem. Phys. 128, 044118 (2008)."
 echo "The implementation of the DCT index is based on the paper J. Chem. Theory Comput. 2011, 7, 8, 2498–2506"
-
 echo ""
 echo 'Miaou !'
 
@@ -86,6 +83,7 @@ do
         echo ""
         echo "               - CP2K: A"
         echo "               - Orca: B"
+        echo "               - Gaussian: C"
         echo ""
         echo "               - Exit: 21"
         echo "    --------------------------------------------------------------"
@@ -301,7 +299,39 @@ do
 					fi
 
                 			elif [ $Index_Type = 2 ]; then
-              					echo "     Not implemented yet.    "
+                		echo "     Note: To be computed, this index needs two states: an initial state and a final state."
+                		echo "            If the ground state is the initial state, please answer 0 for the initial state value." 
+                		echo "            Otherwise, write the state number."
+                		echo "            This computation may take some time."
+                		read -p "    Initial State: " Initial_State
+                		read -p "    Final State: " Final_State
+                		echo "    =============================================================="
+                		echo "" 
+                		Dct_file=Dct.txt
+                		if [ -f ${Dct_file} ] ; then
+                        		echo -n "" > ${Dct_file}
+                		fi
+                        		echo ""
+                      			echo "    =============================================================="
+                        		python excited_index.py dct ${filename} ${orb_file} ${Initial_State} ${Final_State}
+                        		echo "    =============================================================="
+                
+				if [ ${save_cube} = Yes ] ; then
+                        		mkdir -p electron_density
+                        		mv *.cube electron_density
+                		else
+                        		rm *.cube
+                		fi
+                		mv Dct.txt Dct_State_${Initial_State}_to_${Final_State}_Orca.txt
+
+				if [ -n $name]; then
+                                        mv Dct.txt Dct_State_${Initial_State}_to_${Final_State}_Orca.txt Dct.txt Dct_State_${Initial_State}_to_${Final_State}_${name}_Orca.txt
+                                fi
+                		rm -r __pycache__
+								
+								
+								
+								
 					elif [ $Index_Type = 6 ]; then
 			spectra_chosen="all"
 			moment="Absorption via Velocity Dipole Moments"
@@ -524,7 +554,7 @@ do
 						echo "Computing..."
 						python script_color.py ${input_file} ${eye_python} ${lamp} ${moment_python} ${spectra_chosen} ${optic_dens} ${gauss}
                 		rm -rf __pycache__
-						echo "The data has been stored in the file color.txt and the color in the color.png in the same folder as the input file"
+						echo "The data has been same in the file color.txt and the color in the color.png in the same folder as the input file"
 					else	
 					echo ""
 							echo "#########################################################################"
@@ -705,6 +735,1092 @@ do
 
 			if [ $Index_Type = 18 ] ; then
                                 echo "    The path toward orca_plot is by default: ${path}"
+                                read -p "    Please enter the new path: " ${path}
+                        fi
+       			
+		        if [ $Index_Type = 5 ]; then
+				echo "    =============================================================="
+                        	echo "         Generation options:"
+                        	echo ""
+                        	echo "               - From transitions: a"
+                        	echo "               - From a list of orbitals: b"
+                        	echo "               - From an interval of orbitals: c"   
+ 				echo ""
+				echo "               -Exit: 21"
+                        	echo "    --------------------------------------------------------------"
+                        	read -p "    Enter a type: " Index_Type
+                        	echo "    =============================================================="
+                        	if not_in_list "$index_label"  " "  $Index_Type ; then
+                                	echo ""
+                                	echo "#########################################################################"
+                                	echo ""
+                                	echo "                 ERROR: Please choose a valid option "
+                                	echo ""
+                                	echo "#########################################################################"
+                                	echo ""
+                                
+                        	fi
+				
+				if [ $Index_Type = a ]; then
+					
+                       	        	read -p "    Excited State Number: " State_Index
+                                	echo "    =============================================================="
+                                	echo ""	
+                                	sed -i 's/nroots/nroots/Ig' ${input_file}
+					nb_state=(`python -c"import excited_index; excited_index.find_nb_state_calc('${input_file}')"`)
+                                	if [ ${nb_state[1]} = True ] ; then
+                                        	max_index=$((${nb_state[0]} + ${nb_state[0]}))
+                                	else
+                                        	max_index=${nb_state[0]}
+                                	fi
+                                	if [ ${State_Index} -gt $max_index ] ; then
+                                        	echo "----------- ERROR -------------"
+                                        	echo ""
+                                        	echo "    There is no State ${State_Index} in the file ${input_file}"
+                                        	echo ""
+                                        	echo "--------------------------------"
+                                        	echo ""
+                                        
+                                	fi
+
+                                	if [ ${State_Index} -gt ${nb_state[0]} ] ; then
+                                        	State_Index_temp=$((${State_Index} - ${nb_state[0]}))
+                                        	i=1
+                                        	temp=`grep -A $i "STATE[[:space:]]*${State_Index_temp}:  E=" ${input_file} |tail -n 2 |tail -n 1`
+                                        	echo $temp
+                                        	while [[ "$temp" != "" ]];
+                                        	do
+                                                	echo $temp >> ${transition_file}
+                                                	((i++))
+                                                	temp=`grep -A $i "STATE[[:space:]]*${State_Index_temp}:  E=" ${input_file} |tail -n 2 |tail -n 1`
+                                        	done
+                                	else
+                                        	i=1
+                                        	temp=`grep -A $i "STATE[[:space:]]*${State_Index}:  E=" ${input_file} |tail -n 2 |tail -n 1 `
+                                        	echo $temp
+                                        	while [[ "$temp" != "" ]];
+                                        	do
+                                                	echo $temp >> ${transition_file}
+                                                	((i++))
+                                                	temp=`grep -A $i "STATE[[:space:]]*${State_Index}:  E=" ${input_file} |tail -n 2    |tail -n 1`
+                                        	done
+                                	fi
+					MO_virt=($(python -c"import excited_index; excited_index.molecular_decomposition('virtual', True, 'transition.txt')" | tr -d '[],'))
+                                	MO_occ=($(python -c"import excited_index; excited_index.molecular_decomposition('occupied', True, 'transition.txt')" | tr -d '[],'))
+                              
+                                	version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+                                	if [ ${version} = 5 ]; then
+                                        	for occ in ${MO_occ[@]}; do
+                                                	${path}orca_plot ${gbw_file} -i << EOF 
+                                                	4
+                                                	${grid_size}
+                                                	2
+                                                	$occ
+                                                	5
+                                                	7
+                                                	10
+                                                	11
+EOF
+                                        	done
+
+                                        	for virt in ${MO_virt[@]}; do
+                                                	${path}orca_plot ${gbw_file} -i << EOF
+                                               		4
+                                                	${grid_size}
+                                                	2
+                                                	$virt
+                                                	5
+                                                	7
+                                                	10
+                                                	11
+EOF
+                                        	done
+
+                                	elif [ ${version} = 6 ]; then
+                                        	for occ in ${MO_occ[@]}; do
+                                                	${path}orca_plot ${gbw_file} -i << EOF 
+                                                	4
+                                                	${grid_size}
+                                                	2
+                                                	$occ
+                                                	5
+                                                	7
+                                                	11
+                                                	12
+EOF
+                                        	done
+
+                                        	for virt in ${MO_virt[@]}; do
+                                                	${path}orca_plot ${gbw_file} -i << EOF
+                                                	4
+                                                	${grid_size}
+                                                	2
+                                                	$virt
+                                                	5
+                                                	7
+                                                	11
+                                                	12
+EOF
+                                        	done
+                        	        fi
+				fi
+
+				if [ $Index_Type = b ]; then
+					read -p "    List of orbitals: " List_orb
+                                        echo "    =============================================================="
+					for orb in ${List_orb}; do
+						version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+						if [ ${version} = 5 ]; then
+							${path}orca_plot ${gbw_file} -i << EOF
+                                                	4
+                                                	${grid_size}
+                                                	2
+                                                	$orb
+                                                	5
+                                                	7
+                                                	10
+                                                	11
+EOF
+						elif [ ${version} = 6 ]; then
+							${path}orca_plot ${gbw_file} -i << EOF
+                                                	4
+                                                	${grid_size}
+                                                	2
+                                                	$occ
+                                                	5
+                                                	7
+                                                	11
+                                                	12
+EOF
+						fi
+					done
+
+				fi
+
+				if [ $Index_Type = c ]; then
+                                        read -p " Starting orbital: " begin_orb
+					read -p " Ending orbital: " ending_orb
+                                        echo "    =============================================================="
+					for (( orb=${begin_orb}; orb<(${ending_orb} + 1); orb ++ )); do
+                                                version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+                                                if [ ${version} = 5 ]; then
+                                                        ${path}orca_plot ${gbw_file} -i << EOF
+                                                        4
+                                                        ${grid_size}
+                                                        2
+                                                        $orb
+                                                        5
+                                                        7
+                                                        10
+                                                        11
+EOF
+                                                elif [ ${version} = 6 ]; then
+                                                        ${path}orca_plot ${gbw_file} -i << EOF
+                                                        4
+                                                        ${grid_size}
+                                                        2
+                                                        $occ
+                                                        5
+                                                        7
+                                                        11
+                                                        12
+EOF
+                                                fi
+                                        done
+
+                                fi
+			fi
+
+			if [ $Index_Type = 1 ]; then
+                		
+                		read -p "    Excited State Number: " State_Index
+                		echo "    =============================================================="
+                		echo ""
+				sed -i 's/nroots/nroots/Ig' ${input_file}
+                		nb_state=(`python -c"import excited_index; excited_index.find_nb_state_calc('${input_file}')"`)
+                		if [ ${nb_state[1]} = True ] ; then
+                        		max_index=$((${nb_state[0]} + ${nb_state[0]}))
+                		else
+                        		max_index=${nb_state[0]}
+                		fi
+                		if [ ${State_Index} -gt $max_index ] ; then
+                        		echo "----------- ERROR -------------"
+                        		echo ""
+                        		echo "    There is no State ${State_Index} in the file ${input_file}"
+                        		echo ""
+                        		echo "--------------------------------"
+                       			echo ""
+                        	
+                		fi
+
+                		if [ ${State_Index} -gt ${nb_state[0]} ] ; then
+                        		State_Index_temp=$((${State_Index} - ${nb_state[0]}))
+                        		i=1
+                        		temp=`grep -A $i "STATE[[:space:]]*${State_Index_temp}:  E=" ${input_file} |tail -n 2 |tail -n 1`
+					echo $temp
+                        		while [[ "$temp" != "" ]];
+                        		do
+                                		echo $temp >> ${transition_file}
+                                		((i++))
+                                		temp=`grep -A $i "STATE[[:space:]]*${State_Index_temp}:  E=" ${input_file} |tail -n 2 |tail -n 1`
+                        		done
+                		else
+                        		i=1
+                        		temp=`grep -A $i "STATE[[:space:]]*${State_Index}:  E=" ${input_file} |tail -n 2 |tail -n 1 `
+                        		echo $temp
+					while [[ "$temp" != "" ]];
+                        		do
+                                		echo $temp >> ${transition_file}
+                                		((i++))
+                                		temp=`grep -A $i "STATE[[:space:]]*${State_Index}:  E=" ${input_file} |tail -n 2    |tail -n 1`
+                        		done
+                		fi
+
+                		MO_virt=($(python -c"import excited_index; excited_index.molecular_decomposition('virtual', True, 'transition.txt')" | tr -d '[],'))
+                		MO_occ=($(python -c"import excited_index; excited_index.molecular_decomposition('occupied', True, 'transition.txt')" | tr -d '[],'))
+
+				version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+				if [ ${version} = 5 ]; then
+                			for occ in ${MO_occ[@]}; do
+                        			${path}orca_plot ${gbw_file} -i << EOF 
+                        			4
+                        			${grid_size}
+                        			2
+                        			$occ
+                        			5
+                        			7
+                        			10
+                        			11
+EOF
+                			done
+
+                			for virt in ${MO_virt[@]}; do
+                        			${path}orca_plot ${gbw_file} -i << EOF
+                        			4
+                        			${grid_size}
+                        			2
+                        			$virt
+                        			5
+                        			7
+                        			10
+                        			11
+EOF
+                			done
+
+				elif [ ${version} = 6 ]; then
+                                        for occ in ${MO_occ[@]}; do
+                                                ${path}orca_plot ${gbw_file} -i << EOF 
+                                                4
+                                                ${grid_size}
+                                                2
+                                                $occ
+                                                5
+                                                7
+                                                11
+                                                12
+EOF
+                                        done
+
+                                        for virt in ${MO_virt[@]}; do
+                                                ${path}orca_plot ${gbw_file} -i << EOF
+                                                4
+                                                ${grid_size}
+                                                2
+                                                $virt
+                                                5
+                                                7
+                                                11
+                                                12
+EOF
+                                        done
+
+				fi
+
+                		python excited_index.py tozer ${filename} ${cutoff} Orca
+                		rm  square*
+                		rm  mult*
+				rm transition.txt
+
+                		if [ ${save_cube} = Yes ] ; then
+                        		mkdir -p molecular_orbital
+                        		mv *.cube molecular_orbital
+                		else
+                        		rm *mo*.cube
+                		fi
+
+                		mv Tozer.txt Tozer_state_Orca_${State_Index}.txt
+				if [ -n "$name" ]; then
+                                	mv Tozer_state_Orca_${State_Index}.txt Tozer_state_Orca_${State_Index}_${name}.txt
+                                fi
+
+                		rm -r __pycache__
+
+			elif [ $Index_Type = 2 ]; then
+                		echo "     Note: To be computed, this index needs two states: an initial state and a final state."
+                		echo "            If the ground state is the initial state, please answer 0 for the initial state value." 
+                		echo "            Otherwise, write the state number."
+                		echo "            This computation may take some time."
+                		read -p "    Initial State: " Initial_State
+                		read -p "    Final State: " Final_State
+                		echo "    =============================================================="
+                		echo "" 
+                		Dct_file=Dct.txt
+                		if [ -f ${Dct_file} ] ; then
+                        		echo -n "" > ${Dct_file}
+                		fi
+
+                		if [ $Initial_State -ge ${Final_State} ] ; then
+                        		echo "       ------- ERROR ---------"
+                        		echo ""
+                        		echo "          It is impossible to compute the Le Bahers index on this transition"
+                        		echo ""
+                        		echo "        ----------------------"
+                        		echo ""
+                        	
+                		fi
+				sed -i 's/nroots/nroots/Ig' ${input_file}
+                		nb_state=(`python -c"import excited_index; excited_index.find_nb_state_calc('${input_file}')"`)
+                			
+				if [ ${nb_state[1]} = True ] ; then
+                        		max_index=$((${nb_state[0]} + ${nb_state[0]}))
+                		else
+                        		max_index=${nb_state[0]}
+                		fi
+                		if [ ${Initial_State} -gt $max_index ] ; then
+                        		echo "        ------- ERROR ---------"
+                        		echo ""
+                        		echo "          There is no State ${Initial_State} in the file ${input_file}"
+                        		echo "" 
+                        		echo "        ----------------------"
+                        		echo ""
+                        	
+                			fi
+                		if [ ${Final_State} -gt $max_index ] ; then
+                        		echo "        ------- ERROR ---------"
+                        		echo ""
+                        		echo "          There is no State ${Final_State} in the file ${input_file}"
+                        		echo ""
+                        		echo "        ----------------------"
+                        		echo ""
+                        
+                		fi
+
+                		if [ $Initial_State = 0 ] ; then
+					version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+                                	
+					if [ ${version} = 5 ]; then
+                        			${path}orca_plot ${gbw_file} -i << EOF
+                                		4
+                                		${grid_size}
+                                		5
+                                		7
+                                		6
+                                		n
+                                		${cis_file}
+                                		${Final_State}
+                                		12      
+EOF
+				
+					elif [ ${version} = 6 ]; then
+						${path}orca_plot ${gbw_file} -i << EOF
+                                                4
+                                                ${grid_size}
+                                                5
+                                                7
+                                                6
+                                                n
+                                                ${cis_file}
+                                                ${Final_State}
+                                                12
+EOF	
+					fi
+
+                        		if [ $Final_State -lt 10 ] ; then
+                                		mv ${cis_file}dp0${Final_State}.cube diff.cube
+                        		else
+                                		mv ${cis_file}dp${Final_State}.cube diff.cube
+                        		fi
+                        		echo""
+                        		echo "    =============================================================="
+                        		python excited_index.py dct ${filename} 0 ${Final_State}
+                        		echo "    =============================================================="
+
+				else
+
+					version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+                                        if [ ${version} = 5 ]; then
+                                                ${path}orca_plot ${gbw_file} -i << EOF
+                                                4
+                                                ${grid_size}
+                                                5
+                                                7
+                                                6
+                                                n
+                                                ${cis_file}
+                                                ${Initial_State} ${Final_State}
+                                                12      
+EOF
+
+                                        elif [ ${version} = 6 ]; then
+                                                ${path}orca_plot ${gbw_file} -i << EOF
+                                                4
+                                                ${grid_size}
+                                                5
+                                                7
+                                                6
+                                                n
+                                                ${cis_file}
+                                                ${Initial_State} ${Final_State}
+                                                12
+EOF
+       					fi                        
+
+                        		echo ""
+                      			echo "    =============================================================="
+                        		python excited_index.py dct ${filename} ${Initial_State} ${Final_State}
+                        		echo "    =============================================================="
+                		fi
+                
+				rm square*
+				if [ ${save_cube} = Yes ] ; then
+                        		mkdir -p electron_density
+                        		mv *.cube electron_density
+                		else
+                        		rm *.cube
+                		fi
+                		mv Dct.txt Dct_State_${Initial_State}_to_${Final_State}_Orca.txt
+
+				if [ -n $name]; then
+                                        mv Dct.txt Dct_State_${Initial_State}_to_${Final_State}_Orca.txt Dct.txt Dct_State_${Initial_State}_to_${Final_State}_${name}_Orca.txt
+                                fi
+                		rm -r __pycache__
+
+			elif [ ${Index_Type} = 3 ] ; then
+                		echo "     Note: To be computed, this index needs two states: an initial singlet state and a final triplet state."
+                		echo "            Please, write the state number."
+                		echo "            The state number is the quantum indexation (i.e. S1, T1, S2, T2, etc) not the orca compation one."
+                		echo "            This computation may take some time."
+                		read -p "    Initial State (Singlet): " Initial_State
+                		read -p "    Final State (Triplet): " Final_State
+                		echo "    =============================================================="
+                		echo ""
+                		if [ ${Initial_State} = 0 ] ; then
+                        		echo " ------- ERROR ---------"
+                        		echo ""
+                        		echo " Please Chose a Valid State."
+                        		echo ""
+                        		echo " ----------------------"
+                        		echo ""
+                		fi
+                		if [ ${Final_State} = 0 ] ; then
+                        		echo " ------- ERROR ---------"
+                        		echo ""
+                        		echo " Please Chose a Valid State."
+                        		echo ""
+                        		echo " ----------------------"
+                        		echo ""
+                		fi
+				sed -i 's/nroots/nroots/Ig' ${input_file}
+                		nb_state=(`python -c"import excited_index; excited_index.find_nb_state_calc('${input_file}')"`)
+                		if [ ${nb_state[1]} = True ] ; then
+                        		max_index=$((${nb_state[0]} + ${nb_state[0]}))
+                		else
+                        		max_index=${nb_state[0]}
+                		fi
+                		if [ ${Initial_State} -gt ${nb_state[0]} ] ; then
+                        		echo " ------- ERROR ---------"
+                        		echo ""
+                        		echo "There is no Singlet State ${Initial_State} in the file ${input_file}"
+                        		echo ""
+                        		echo " ----------------------"
+                        		echo ""
+                        	
+                		fi
+                		echo "    The Singlet State Considered is the S${Initial_State}"
+                		i=1
+                		temp=`grep -A $i "STATE[[:space:]]*${Initial_State}:  E=" ${input_file} |tail -n 2 |tail -n 1 `
+                		while [[ "$temp" != "" ]];
+                		do
+                        		echo $temp >> ${transition_file}
+                        		((i++))
+                        		temp=`grep -A $i "STATE[[:space:]]*${Initial_State}:  E=" ${input_file} |tail -n 2 |tail -n 1`
+                		done
+                		MO_virt_s=($(python -c"import excited_index; excited_index.molecular_decomposition('virtual', True, 'transition.txt')" | tr -d '[],'))
+                		MO_occ_s=($(python -c"import excited_index; excited_index.molecular_decomposition('occupied', True, 'transition.txt')" | tr -d '[],'))
+			
+                                version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+                                if [ ${version} = 5 ]; then
+                                        for occ in ${MO_occ[@]}; do
+                                                ${path}orca_plot ${gbw_file} -i << EOF 
+                                                4
+                                                ${grid_size}
+                                                2
+                                                $occ
+                                                5
+                                                7
+                                                10
+                                                11
+EOF
+                                        done
+
+                                        for virt in ${MO_virt[@]}; do
+                                                ${path}orca_plot ${gbw_file} -i << EOF
+                                                4
+                                                ${grid_size}
+                                                2
+                                                $virt
+                                                5
+                                                7
+                                                10
+                                                11
+EOF
+                                        done
+
+                                elif [ ${version} = 6 ]; then
+                                        for occ in ${MO_occ[@]}; do
+                                                ${path}orca_plot ${gbw_file} -i << EOF 
+                                                4
+                                                ${grid_size}
+                                                2
+                                                $occ
+                                                5
+                                                7
+                                                11
+                                                12
+EOF
+                                        done
+
+                                        for virt in ${MO_virt[@]}; do
+                                                ${path}orca_plot ${gbw_file} -i << EOF
+                                                4
+                                                ${grid_size}
+                                                2
+                                                $virt
+                                                5
+                                                7
+                                                11
+                                                12
+EOF
+                                        done
+
+                                fi		
+
+                		mv transition.txt transition_S${Initial_State}.txt
+                		transition_file=transition.txt
+                		if [ -f ${transition_file} ] ; then
+                        		echo -n "" > ${transition_file}
+                		fi
+                		if [ ${Final_State} -lt ${nb_state[0]} ] ; then
+                        		final_state=${Final_State}
+                        		echo ""
+                        		echo "    The Triplet State Considered is the T${final_State}"
+                        		echo ""
+                		elif [ ${Final_State} -gt ${nb_state[0]} ] ; then
+                        		if [ ${Final_State} -le ${max_index} ] ; then
+                                		final_state=$((${Final_State} - ${nb_state[0]}))
+                                		echo "    The Triplet State Considered is th T${final_state}"
+                                		echo ""
+                        			else
+                                		echo " ------- ERROR ---------"
+                                		echo ""
+                                		echo "There is no Triplet State ${final_state} in the file ${input_file}"
+                                		echo ""
+                                		echo " ----------------------"
+                        		fi
+                		fi
+                		i=1
+                		temp=`grep -A $i "STATE[[:space:]]*${final_state}:  E=" ${input_file} |tail -n 2 |tail -n 1`
+                		while [[ "$temp" != "" ]] ;
+                		do
+                        		echo $temp >> ${transition_file}
+                        		((i++))
+                        		temp=`grep -A $i "STATE[[:space:]]*${final_state}:  E=" ${input_file} |tail -n 2 |tail -n 1`
+                		done
+                		MO_virt_t=($(python -c"import excited_index; excited_index.molecular_decomposition('virtual', True, 'transition.txt')" | tr -d '[],'))
+                		MO_occ_t=($(python -c"import excited_index; excited_index.molecular_decomposition('occupied', True, 'transition.txt')" | tr -d '[],'))
+
+                                version=$(grep 'Program Version' ${input_file} | sed -n 's/.*Program Version\s*\([0-9]\).*/\1/p')
+                                if [ ${version} = 5 ]; then
+                                        for occ in ${MO_occ[@]}; do
+                                                ${path}orca_plot ${gbw_file} -i << EOF 
+                                                4
+                                                ${grid_size}
+                                                2
+                                                $occ
+                                                5
+                                                7
+                                                10
+                                                11
+EOF
+                                        done
+
+                                        for virt in ${MO_virt[@]}; do
+                                                ${path}orca_plot ${gbw_file} -i << EOF
+                                                4
+                                                ${grid_size}
+                                                2
+                                                $virt
+                                                5
+                                                7
+                                                10
+                                                11
+EOF
+                                        done
+
+                                elif [ ${version} = 6 ]; then
+                                        for occ in ${MO_occ[@]}; do
+                                                ${path}orca_plot ${gbw_file} -i << EOF 
+                                                4
+                                                ${grid_size}
+                                                2
+                                                $occ
+                                                5
+                                                7
+                                                11
+                                                12
+EOF
+                                        done
+
+                                        for virt in ${MO_virt[@]}; do
+                                                ${path}orca_plot ${gbw_file} -i << EOF
+                                                4
+                                                ${grid_size}
+                                                2
+                                                $virt
+                                                5
+                                                7
+                                                11
+                                                12
+EOF
+                                        done
+
+                                fi
+
+                		mv transition.txt transition_T${final_state}.txt
+                		echo ""
+                		echo "    =============================================================="
+                		python excited_index.py omega_soc ${filename} ${cutoff} ${Initial_State} ${final_state}
+                		echo "    =============================================================="
+                		rm square*
+                		rm mult*
+                		rm transition*
+                
+				if [ ${save_cube} = Yes ] ; then
+                        		mkdir -p molecular_orbital
+                        		mv *.cube molecular_orbital
+                		else
+                        		rm *.cube
+                		fi
+                		mv Omega.txt Omega_S${Initial_State}_T${Final_State}_Orca.txt
+
+				if [ -n $name]; then
+                                        mv Omega.txt Omega_S${Initial_State}_T${Final_State}_Orca.txt Omega.txt Omega_S${Initial_State}_T${Final_State}_${name}_Orca.txt
+                                fi
+                		rm -r __pycache__
+
+			elif [ $Index_Type = 4 ]; then
+                		echo "     Note : This index is still in implementation"
+                		echo "            Please give the CUBE-file of the electron density of the final and the initial state ."
+                		read -p "    CUBE-file of the Electron Density of the Initial State: " Initial_State_file
+                		read -p "    CUBE-file of the Electron Density of the Final State: " Final_State_file
+                		echo "    =============================================================="
+                		python excited_index.py double_overlap_cube ${Initial_State_file} ${Final_State_file}
+                		echo "    =============================================================="
+                		rm mult.cube
+                		rm -rf __pycache__
+
+			elif [ $Index_Type = 6 ]; then
+			spectra_chosen="all"
+			moment="Absorption via Electric Dipole Moments"
+			moment_python="abs_elec"
+			optic_dens=1
+			lambda_min=300
+			lambda_max=900
+			num_points=500
+			format="png"
+			gauss="0.3"
+				while [[ ! ($Index_Type -eq 20) && ! ($Index_Type -eq 21)  ]]
+				do
+					echo "    ============================================================="
+					echo "                       Absorption / CD Spectra"
+					echo "    ============================================================="
+					echo "         Type of spectra : ${moment}"
+					echo "         Spectra chosen : ${spectra_chosen}"
+					echo "         Optical Density : ${optic_dens}"
+					echo "         Gaussian width : ${gauss}"
+					echo "         Minimal Wavelength (nm) : ${lambda_min}"
+					echo "         Maximal Wavelength (nm) : ${lambda_max}"
+					echo "         Number of Points : ${num_points}"
+					echo "         Format : ${format}"
+					echo "    =============================================================="
+					echo "         Change:"
+					echo ""
+					echo "               - Type of spectra: 1"
+					echo "               - Spectra chosen: 2"
+					echo "               - Optical Density: 3"
+					echo "               - Gaussian Width: 4"
+					echo "               - Minimal Wavelength: 5"
+					echo "               - Maximal Wavelength: 6"
+					echo "               - Number of Points: 7"
+					echo "               - Format: 8"
+					echo ""
+					echo "               - Plot: 10"
+					echo "               - Exit: 21"
+					echo "    --------------------------------------------------------------"
+					read -p "    Enter a type: " Index_Type
+					echo "    =============================================================="
+							
+							
+					if [ $Index_Type = 1 ]; then
+                		echo "        Please enter the type of spectra :"
+                		echo "            Absorption via Electric Dipole Moments : 1"
+                		echo "            Absorption via Velocity Dipole Moments : 2"
+                		echo "            CD via Electric Dipole Moments : 3"
+                		echo "            CD via Velocity Dipole Moments : 4"
+                		read -p "   Enter a number : " num_moment
+						if [ $num_moment = 1 ]; then
+							moment="Absorption via Electric Dipole Moments"
+							moment_python="abs_elec"
+						elif [ $num_moment = 2 ]; then
+							moment="Absorption via Velocity Dipole Moments"
+							moment_python="abs_velo"
+						elif [ $num_moment = 3 ]; then
+							moment="CD via Electric Dipole Moments"
+							moment_python="cd_elec"
+						elif [ $num_moment = 4 ]; then
+							moment="CD via Velocity Dipole Moments"
+							moment_python="cd_velo"
+						fi
+						
+					elif [ $Index_Type = 2 ]; then
+                		echo "        Please enter the type of spectra :"
+                		echo "           The possibilities are all, x, y, z, xy, xz, yz, xyz and any combination using \",\" as a separator"
+                		read -p "   Enter the type : " spectra_chosen
+						
+					elif [ $Index_Type = 3 ]; then
+                		echo "        Please enter the Optical Density :"
+                		read -p "   Enter a number : " optic_dens
+						
+
+					elif [ $Index_Type = 4 ]; then
+                		echo "        Please enter the Gaussian Width :"
+                		read -p "   Enter a number : " gauss
+						
+					elif [ $Index_Type = 5 ]; then
+                		echo "        Please enter the Minimal Wavelength :"
+                		read -p "   Enter a number : " lambda_min
+					
+					elif [ $Index_Type = 6 ]; then
+                		echo "        Please enter the Maximal Wavelength :"
+                		read -p "   Enter a number : " lambda_max
+					
+					elif [ $Index_Type = 7 ]; then
+                		echo "        Please enter the Number of points :"
+                		read -p "   Enter a number : " num_points
+					
+					elif [ $Index_Type = 8 ]; then
+                		echo "        Please enter the Format of the ouptut file (png or svg are recommended) :"
+                		read -p "   Enter the format : " format
+					
+					elif [ $Index_Type = 10 ]; then
+						python script_spectra.py ${input_file} ${moment_python} ${spectra_chosen} ${optic_dens} ${gauss} ${lambda_min} ${lambda_max} ${num_points} ${format}
+                		rm -rf __pycache__
+					else	
+					echo ""
+							echo "#########################################################################"
+							echo ""
+							echo "                 ERROR: Please choose a valid option "
+							echo ""
+							
+							echo "       ,"
+							echo "       \\-._           /\   "
+							echo "        \\  \-..____,./  \. "
+							echo "         :\.         /    \\. "
+							echo "         :  )       :      : \ "
+							echo "          ;/        \   ;  :  :"
+							echo "          )..      .. .:.\.;  :"
+							echo "         /::...  .:::...   \ ;"
+							echo "         ; _ \    __        /:\ "
+							echo "         \:o>   /\o_>      ;:. \."
+							echo "        \-\.__ ;   __..--- /:.   \ "
+							echo "        === \_/   ;=====_.\:.     ;"
+							echo "         ,/\\--\...\--....        ;"
+							echo "              ;                    ;"
+							echo "            .\                      ;"
+							echo "          .\                        ;"
+							echo "        .\     ..     ,      .       ;"
+							echo "       :       ::..  /      ;::.     :"
+							echo "      /      \.;::.  :       ;:..    ;"
+							echo "     :         ::.   :       ;:.    ;"
+							echo "     :         ::     ;:..   :.    ;"
+							echo "      :       :;      :::....:     :"
+							echo "      /\     ,/ \      ;:::::;     ;"
+							echo "    .:. \:..:    :     ; \.--:     ;"
+							echo "   ::.  :\\  \-.,,;     ;\   ;     ;"
+							echo ".-\. _.\\      / \;      \,__:      \ "
+							echo "\---\    \----\   ;      /    \,.,,,/"
+							echo "                   \----\             "
+							echo "#########################################################################"
+							echo ""	
+					fi
+					done
+					elif [ $Index_Type = 7 ]; then
+			eye="CIE 1964 10°"
+			eye_python="10deg"
+			lamp="D65"
+			spectra_chosen="xyz"
+			moment="Absorption via Electric Dipole Moments"
+			moment_python="abs_elec"
+			optic_dens=1
+			gauss="0.3"
+				while [[ ! ($Index_Type -eq 20) && ! ($Index_Type -eq 21)  ]]
+				do
+					echo "    ============================================================="
+					echo "                       Color computation"
+					echo "    ============================================================="
+					echo "         Observer : ${eye}"
+					echo "         Illuminant : ${lamp}"
+					echo "         Type of spectra : ${moment}"
+					echo "         Spectra chosen : ${spectra_chosen}"
+					echo "         Optical Density : ${optic_dens}"
+					echo "         Gaussian width : ${gauss}"
+					echo "    =============================================================="
+					echo "         Change:"
+					echo ""
+					echo "               - Observer: 1"
+					echo "               - Illuminant: 2"
+					echo "               - Type of spectra: 3"
+					echo "               - Spectra chosen: 4"
+					echo "               - Optical Density: 5"
+					echo "               - Gaussian Width: 6"
+					echo ""
+					echo "               - Plot: 10"
+					echo "               - Exit: 21"
+					echo "    --------------------------------------------------------------"
+					read -p "    Enter a type: " Index_Type
+					echo "    =============================================================="
+							
+					
+					if [ $Index_Type = 1 ]; then
+                		echo "        Please enter the observer :"
+                		echo "           The possibilities are :"
+                		echo "                  CIE 1931 2° : 1"
+                		echo "                  CIE 1964 10° : 2"
+                		echo "                  Name of a file to load"
+						echo "   Note:  The file needs to start from 360nm to 830nm with a step of 1"
+                		read -p "   Enter a number of name of the file : " eye_selection
+						if [ $eye_selection = 1 ]; then
+							eye="CIE 1931 2°"
+							eye_python="2deg"
+						elif [ $eye_selection = 2 ]; then
+							eye="CIE 1964 10°"
+							eye_python="10deg"
+						else
+							eye=eye_selection
+							eye_python=eye_selection
+						fi
+					elif [ $Index_Type = 2 ]; then
+                		echo "        Please enter the illuminant :"
+                		echo "           The possibilities are :"
+                		echo "                  A : 1"
+                		echo "                  B : 2"
+                		echo "                  D65 : 3"
+						echo "                  Name of a file to load"
+						echo "   Note:  The file needs to start from 360nm to 830nm with a step of 1"
+                		read -p "   Enter a number of name of the file : " lamp_selection
+						if [ $lamp_selection = 1 ]; then
+							lamp="A"
+						elif [ $lamp_selection = 2 ]; then
+							lamp="B"
+						elif [ $lamp_selection = 3 ]; then
+							lamp="D65"
+						else
+							lamp=lamp_selection
+						fi
+					elif [ $Index_Type = 3 ]; then
+                		echo "        Please enter the type of spectra :"
+                		echo "            Absorption via Electric Dipole Moments : 1"
+                		echo "            Absorption via Velocity Dipole Moments : 2"
+                		read -p "   Enter a number : " num_moment
+						if [ $num_moment = 1 ]; then
+							moment="Absorption via Electric Dipole Moments"
+							moment_python="abs_elec"
+						elif [ $num_moment = 2 ]; then
+							moment="Absorption via Velocity Dipole Moments"
+							moment_python="abs_velo"
+						elif [ $num_moment = 3 ]; then
+							moment="CD via Electric Dipole Moments"
+							moment_python="cd_elec"
+						elif [ $num_moment = 4 ]; then
+							moment="CD via Velocity Dipole Moments"
+							moment_python="cd_velo"
+						fi
+						
+					elif [ $Index_Type = 4 ]; then
+                		echo "        Please enter the type of spectra :"
+                		echo "           The possibilities are x, y, z, xy, xz, yz, xyz"
+                		read -p "   Enter the type : " spectra_chosen
+						
+					elif [ $Index_Type = 5 ]; then
+                		echo "        Please enter the Optical Density :"
+                		read -p "   Enter a number : " optic_dens
+
+					elif [ $Index_Type = 6 ]; then
+                		echo "        Please enter the Gaussian Width :"
+                		read -p "   Enter a number : " gauss
+					
+					elif [ $Index_Type = 10 ]; then
+						echo "Computing..."
+						python script_color.py ${input_file} ${eye_python} ${lamp} ${moment_python} ${spectra_chosen} ${optic_dens} ${gauss}
+                		rm -rf __pycache__
+						echo "The data has been same in the file color.txt and the color in the color.png in the same folder as the input file"
+					else	
+					echo ""
+							echo "#########################################################################"
+							echo ""
+							echo "                 ERROR: Please choose a valid option "
+							echo ""
+							
+							echo "       ,"
+							echo "       \\-._           /\   "
+							echo "        \\  \-..____,./  \. "
+							echo "         :\.         /    \\. "
+							echo "         :  )       :      : \ "
+							echo "          ;/        \   ;  :  :"
+							echo "          )..      .. .:.\.;  :"
+							echo "         /::...  .:::...   \ ;"
+							echo "         ; _ \    __        /:\ "
+							echo "         \:o>   /\o_>      ;:. \."
+							echo "        \-\.__ ;   __..--- /:.   \ "
+							echo "        === \_/   ;=====_.\:.     ;"
+							echo "         ,/\\--\...\--....        ;"
+							echo "              ;                    ;"
+							echo "            .\                      ;"
+							echo "          .\                        ;"
+							echo "        .\     ..     ,      .       ;"
+							echo "       :       ::..  /      ;::.     :"
+							echo "      /      \.;::.  :       ;:..    ;"
+							echo "     :         ::.   :       ;:.    ;"
+							echo "     :         ::     ;:..   :.    ;"
+							echo "      :       :;      :::....:     :"
+							echo "      /\     ,/ \      ;:::::;     ;"
+							echo "    .:. \:..:    :     ; \.--:     ;"
+							echo "   ::.  :\\  \-.,,;     ;\   ;     ;"
+							echo ".-\. _.\\      / \;      \,__:      \ "
+							echo "\---\    \----\   ;      /    \,.,,,/"
+							echo "                   \----\             "
+							echo "#########################################################################"
+							echo ""	
+					fi
+					done
+        		fi
+			done
+				
+	
+	
+	
+	
+		
+	elif [ $Index_Type = C ] ; then
+		echo ""
+		echo "    =============================================================="
+                echo ""
+                echo "                  Welcome to the Gaussian interface"
+                echo ""
+                echo "    =============================================================="
+		echo ""
+		if [ $# -eq 0 ] ; then
+        	
+        		echo "    Please enter the name of the fchk-file of the Gaussian calculation"
+        		read -p "    Enter the filename: " input_file
+		else
+        		input_file=${1}
+		fi
+		while [[ ! ($Index_Type -eq 20) && ! ($Index_Type -eq 21)  ]]
+		do
+        		if [ -f ${transition_file} ] ; then
+                		echo -n "" > ${transition_file}
+        		fi
+        		echo ""
+        		echo "    ============================================================="
+        		echo "         FCHK-file name: ${input_file}"
+        		echo "         Grid Size: ${grid_size}x${grid_size}x${grid_size}"
+        		echo "         Auto-Save of CUBE-file: ${save_cube}"
+        		echo "         Cutoff in the transition decomposition: ${cutoff}"
+        		echo "    =============================================================="
+        		echo "         Type of Index:"
+        		echo ""
+        		echo "               - Tozer Index: 1"
+        		echo "               - DCT Index: 2"
+        		echo "               - Omega Index For ICS: 3"
+        		echo "               - Overlapping of Transitions: 4"
+				echo "               - Only generate the orbitals: 5"
+				echo "               - Absorption / CD Spectra: 6"
+				echo "               - Molecule Color: 7"
+				echo ""
+        		echo "               - Change FCHK-file: 11"
+        		echo "               - Change Grid Size: 14"
+        		echo "               - Auto-Save of CUBE-file: 15"
+        		echo "               - Change the cutoff: 16"
+				echo "               - Name of the Tozer file: 17"
+				echo "               - Name of the gaussian path: 18"
+        		echo ""
+        		echo "               - Change the code: 20"
+				echo "               - Exit: 21"
+        		echo "    --------------------------------------------------------------"
+        		read -p "    Enter a type: " Index_Type
+        		echo "    =============================================================="
+        		if not_in_list "$index_label"  " "  $Index_Type ; then
+                		echo ""
+                		echo "#########################################################################"
+                		echo ""
+                		echo "                 ERROR: Please choose a valid option "
+                		echo ""
+                		echo "#########################################################################"
+                		echo ""	
+        		fi
+
+        		if [ $Index_Type = 11 ] ; then
+                		while [[ ! $whiling =~ ^(n|y)$ ]]
+                		do
+                        		echo "    The default name of the GBW-file would be: ${gbw_file}"
+                        		read -p "    Is this the one you want (y/n): " whiling
+                		done
+                		if [ $whiling = n ] ; then
+                        		read -p "    Enter the filename: " input_file
+                		fi
+        		fi
+
+        		if [ $Index_Type = 14 ] ; then
+               			echo "    The actual grid size is: ${grid_size}x${grid_size}x${grid_size}"
+                		read -p "    The new grid size is: " grid_size
+        		fi
+
+        		if [ $Index_Type = 15 ] ; then
+                		whiling=''
+                		while [[ ! $whiling =~ ^(n|y)$ ]]
+                		do
+                       	 		read -p "    Automatic save of the generated CUBE-file (y/n): " whiling
+                		done
+                		if [ $whiling = n ] ; then
+                        		save_cube='No'
+                		elif [ $whiling = y ] ; then
+                        		save_cube='Yes'
+                		fi
+        		fi
+
+			if [ $Index_Type = 16 ] ; then
+                		echo "    The cutoff for the transition decomposition is: ${cutoff}"
+                		read -p "    Please enter the new cutoff: " cutoff
+        		fi
+
+			if [ $Index_Type = 17 ] ; then
+                                echo "    The name for the Tozer file is by default: Tozer-state"
+                                read -p "    Please enter the new suffixe: " name
+                        fi
+
+			if [ $Index_Type = 18 ] ; then
+                                echo "    The path toward gaussian is by default: ${path}"
                                 read -p "    Please enter the new path: " ${path}
                         fi
        			
