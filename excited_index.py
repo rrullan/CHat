@@ -458,7 +458,6 @@ def read_transition_cp2k(input_file):
     
 def main_dct_cp2k(input_file, initial_state, final_state, bohr):
     transition = read_transition_cp2k(input_file)
-    
     input_file_s = input_file.split(".")[0]
     
     if initial_state == 0:
@@ -1049,11 +1048,13 @@ if __name__ == '__main__':
             main_tozer_Orca(name, cutoff)
             
     elif index=='dct':
+        print(sys.argv)
         input_file = sys.argv[2]
         initial_state = int(sys.argv[3])
         final_state = int(sys.argv[4])
+        code = sys.argv[5]
         if code == 'CP2K':     
-            dct_list = main_dct_cp2k(input_file, orb_file, initial_state, final_state, bohr)
+            dct_list = main_dct_cp2k(input_file, initial_state, final_state, bohr)
         else:
             dct_list = main_dct_orca(input_file, initial_state, final_state, bohr)
         output_print_Dct(dct_list)

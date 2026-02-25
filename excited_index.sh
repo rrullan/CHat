@@ -313,7 +313,7 @@ do
                 		fi
                         		echo ""
                       			echo "    =============================================================="
-                        		python excited_index.py dct ${filename} ${orb_file} ${Initial_State} ${Final_State}
+                        		python excited_index.py dct ${input_file} ${Initial_State} ${Final_State} CP2K
                         		echo "    =============================================================="
                 
 				if [ ${save_cube} = Yes ] ; then
