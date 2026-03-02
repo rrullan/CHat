@@ -505,7 +505,7 @@ def main_dct_cp2k(input_file, initial_state, final_state, bohr):
     
     else: cube_diff = cube_fin
     
-    cube_pos = abs(cube_diff)
+    cube_pos = cube_diff * (cube_diff > 0)
     cube_negative = cube_diff - cube_pos
     bary_plus = barycentre_from_data(cube_pos)
     bary_moins = barycentre_from_data(cube_negative)
