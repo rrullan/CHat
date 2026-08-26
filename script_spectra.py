@@ -17,7 +17,7 @@ convert_J_to_ev = 6.24150907e18
 convert_J_to_au = 2.29371228e17
 convert_ev_to_cm = 8065.54
 h = 6.626068e-34
-c = 299_792_458
+c = 299792458
 e = 1.609217733e-19
 
 
@@ -255,9 +255,9 @@ def oscillator_force(transition_energy, moments):
     fosc = np.zeros((N_trans,4)) #Store X*X, Y*Y, Z*Z and sum
 
     for energy, mom, fosc_i in zip(transition_energy, moments, range(N_trans)):
-        fosc_i_x = 2 * energy / convert_au_to_cm * mom[0]**2 /3
-        fosc_i_y = 2 * energy / convert_au_to_cm * mom[1]**2 /3
-        fosc_i_z = 2 * energy / convert_au_to_cm * mom[2]**2 /3
+        fosc_i_x = 2 * energy / convert_au_to_ev * mom[0]**2 /3
+        fosc_i_y = 2 * energy / convert_au_to_ev * mom[1]**2 /3
+        fosc_i_z = 2 * energy / convert_au_to_ev * mom[2]**2 /3
 
         fosc[fosc_i] = [fosc_i_x, fosc_i_y, fosc_i_z, fosc_i_x + fosc_i_y + fosc_i_z]
 
@@ -284,9 +284,9 @@ def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max
         gauss = np.array(gauss)
     gauss_corr = gauss / FWHM / convert_au_to_ev
 
-    lambda_list = np.linspace(lambda_min,lambda_max,n_points,endpoint=True)
-    lambda_energy = h * c /(lambda_list*1e-9) * convert_J_to_au
-    distance = lambda_energy.reshape((len(lambda_energy),1)) -transition_energy/convert_au_to_cm
+    lambda_list = np.linspace(lambda_min,lambda_max,n_points,endpoint=True, dtype=int)
+    lambda_energy = 1239.8 /(lambda_list) 
+    distance = lambda_energy.reshape((len(lambda_energy),1)) -transition_energy
 
 
     if type(gauss) is np.ndarray:
