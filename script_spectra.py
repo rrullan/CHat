@@ -282,7 +282,7 @@ def compute_spectra(transition_energy, moments, DO=1, lambda_min=300, lambda_max
     rac_pi = (2*np.pi)**(1/2)
     if type(gauss) is list:
         gauss = np.array(gauss)
-    gauss_corr = gauss / FWHM / convert_au_to_ev
+    gauss_corr = gauss / FWHM 
 
     lambda_list = np.linspace(lambda_min,lambda_max,n_points,endpoint=True, dtype=int)
     lambda_energy = 1239.8 /(lambda_list) 
